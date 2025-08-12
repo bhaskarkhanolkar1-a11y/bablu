@@ -4,8 +4,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 	return classes.filter(Boolean).join(" ");
 }
 
-export interface InputProps
-	extends React.InputHTMLAttributes<HTMLInputElement> {}
+export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
 	({ className, type = "text", ...props }, ref) => {

@@ -1,20 +1,48 @@
-// FILE: app/item/page.tsx
+// FILE: app/page.tsx
 
-import { Suspense } from 'react';
-import ItemContent from './ItemContent';
+"use client";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-// This remains a Server Component for best performance
-export default function ItemPage() {
-  return (
-    <main className="p-8">
-      <h2 className="text-2xl font-semibold">Item Details Page</h2>
-      <p>This part of the page is rendered on the server.</p>
+export default function HomePage() {
+	const router = useRouter();
+	const [code, setCode] = React.useState("");
+	const isValid = /^[A-Za-z0-9]{5}$/.test(code.trim());
 
-      {/* This Suspense boundary shows a loading message */}
-      {/* while the client-side component (ItemContent) loads. */}
-      <Suspense fallback={<p className="mt-4 animate-pulse">Loading item details...</p>}>
-        <ItemContent />
-      </Suspense>
-    </main>
-  );
+	function submit() {
+		const value = code.trim().toUpperCase();
+		if (!/^[A-Za-z0-9]{5}$/.test(value)) return;
+		router.push(`/item?code=${encodeURIComponent(value)}`);
+	}
+
+	return (
+		<div className="min-h-screen flex items-center justify-center p-6">
+			<div className="w-full max-w-md space-y-4">
+				<h1 className="text-2xl font-semibold tracking-tight">Lookup item</h1>
+				<div className="flex gap-2">
+					<Input
+						placeholder="Enter 5-digit code"
+						value={code}
+						onChange={e => setCode(e.target.value)}
+						onKeyDown={e => {
+							if (e.key === "Enter") submit();
+						}}
+						maxLength={5}
+					/>
+					<Button onClick={submit} disabled={!isValid}>
+						Go
+					</Button>
+				</div>
+				<div className="text-sm text-muted-foreground">
+					{code && !isValid ? (
+						<p>Codes must be exactly 5 alphanumeric characters.</p>
+					) : (
+						<p>Tip: You can press Enter to submit.</p>
+					)}
+				</div>
+			</div>
+		</div>
+	);
 }

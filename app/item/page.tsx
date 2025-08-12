@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import ItemPageContent from './ItemPageContent';
 
-export default function ItemPage() {
+export default function ItemDetailsPage() {
   return (
     <Suspense fallback={<LoadingState />}>
       <ItemPageContent />

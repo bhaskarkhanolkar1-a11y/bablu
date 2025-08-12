@@ -3,8 +3,8 @@ import * as React from "react";
 function cn(...classes: Array<string | false | null | undefined>) {
 	return classes.filter(Boolean).join(" ");
 }
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface InputProps
 	extends React.InputHTMLAttributes<HTMLInputElement> {}
 
@@ -23,6 +23,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 		);
 	}
 );
+
 Input.displayName = "Input";
 
 export { Input };

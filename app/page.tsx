@@ -13,7 +13,7 @@ export default function HomePage() {
 
 	function submit() {
 		const value = code.trim().toUpperCase();
-		if (!/^[A-Za-z0-9]{5}$/.test(value)) return;
+		if (!isValid) return;
 		router.push(`/item?code=${encodeURIComponent(value)}`);
 	}
 

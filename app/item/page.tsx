@@ -1,23 +1,46 @@
-// FILE: app/item/page.tsx
+"use client";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
-import { Suspense } from 'react';
-import ItemPageContent from './ItemPageContent'; // We will create this next
+export default function Home() {
+	const router = useRouter();
+	const [code, setCode] = React.useState("");
+	const isValid = /^[A-Za-z0-9]{5}$/.test(code.trim());
 
-export default function ItemPage() {
-  return (
-    // This Suspense boundary shows a fallback UI
-    // while the client component below is loading.
-    <Suspense fallback={<LoadingState />}>
-      <ItemPageContent />
-    </Suspense>
-  );
-}
+	function submit() {
+		const value = code.trim().toUpperCase();
+		if (!/^[A-Za-z0-9]{5}$/.test(value)) return;
+		router.push(`/item?code=${encodeURIComponent(value)}`);
+	}
 
-// A simple component for the loading fallback
-function LoadingState() {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <p className="animate-pulse">Loading item...</p>
-    </div>
-  );
+	return (
+		<div className="min-h-screen flex items-center justify-center p-6">
+			<div className="w-full max-w-md space-y-4">
+				<h1 className="text-2xl font-semibold tracking-tight">Lookup item</h1>
+				<div className="flex gap-2">
+					<Input
+						placeholder="Enter 5-digit code"
+						value={code}
+						onChange={e => setCode(e.target.value)}
+						onKeyDown={e => {
+							if (e.key === "Enter") submit();
+						}}
+						maxLength={5}
+					/>
+					<Button onClick={submit} disabled={!isValid}>
+						Go
+					</Button>
+				</div>
+				<div className="text-sm text-muted-foreground">
+					{code && !isValid ? (
+						<p>Codes must be exactly 5 alphanumeric characters.</p>
+					) : (
+						<p>Tip: You can press Enter to submit.</p>
+					)}
+				</div>
+			</div>
+		</div>
+	);
 }

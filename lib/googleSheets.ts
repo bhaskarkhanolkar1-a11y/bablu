@@ -58,6 +58,36 @@ export async function getQuantityByCode(code: string): Promise<number | null> {
 	return null;
 }
 
+export async function getItemByCode(
+	code: string
+): Promise<{ quantity: number; location: string } | null> {
+	const sheets = getSheetsClient();
+	const range = `${SHEET_TAB()}!A:C`;
+	const resp = await sheets.spreadsheets.values.get({
+		spreadsheetId: SHEET_ID(),
+		range,
+		majorDimension: "ROWS",
+	});
+	const rows = resp.data.values || [];
+	if (rows.length === 0) return null;
+
+	for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
+		const row = rows[rowIndex];
+		if (!row || row.length === 0) continue;
+		const rowCode = String(row[0] ?? "")
+			.trim()
+			.toUpperCase();
+		if (rowCode === code) {
+			const qtyStr = String(row[1] ?? "").trim();
+			const qty = Number.parseInt(qtyStr, 10);
+			const quantity = Number.isFinite(qty) ? qty : 0;
+			const location = String(row[2] ?? "").trim();
+			return { quantity, location };
+		}
+	}
+	return null;
+}
+
 export async function setQuantityByCode(
 	code: string,
 	quantity: number
@@ -117,9 +147,10 @@ export async function getAllCodeQuantity(): Promise<
 		const row = rows[i] ?? [];
 		const codeRaw = String(row[0] ?? "").trim();
 		if (!codeRaw) continue; // skip empty code rows
-		// Keep original case for code display? Requirement shows lowercase in example; keep as-is
 		const qtyStr = String(row[1] ?? "").trim();
 		const qtyParsed = Number.parseInt(qtyStr, 10);
+		// Skip likely header row if first row has non-numeric quantity
+		if (i === 0 && !Number.isFinite(qtyParsed)) continue;
 		const quantity = Number.isFinite(qtyParsed) ? qtyParsed : 0;
 		results.push({ code: codeRaw, quantity });
 	}

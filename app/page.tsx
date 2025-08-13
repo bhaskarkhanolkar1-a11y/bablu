@@ -5,42 +5,149 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
 
 export default function HomePage() {
 	const router = useRouter();
 	const [code, setCode] = React.useState("");
-	const isValid = /^[A-Za-z0-9]{5}$/.test(code.trim());
+	const [open, setOpen] = React.useState(false);
+	const [loading, setLoading] = React.useState(false);
+	const [suggestions, setSuggestions] = React.useState<
+		Array<{ code: string; quantity: number }>
+	>([]);
+	const [activeIndex, setActiveIndex] = React.useState(-1);
 
 	function submit() {
 		const value = code.trim().toUpperCase();
-		if (!isValid) return;
 		router.push(`/item?code=${encodeURIComponent(value)}`);
+	}
+
+	// Debounced fetch of suggestions after 2+ characters
+	React.useEffect(() => {
+		const q = code.trim();
+		if (q.length < 2) {
+			setSuggestions([]);
+			setOpen(false);
+			setActiveIndex(-1);
+			return;
+		}
+		setLoading(true);
+		const id = setTimeout(() => {
+			fetch(`/api/items?q=${encodeURIComponent(q)}&limit=10`)
+				.then(async res => {
+					if (!res.ok) throw new Error(await res.text());
+					return res.json();
+				})
+				.then((data: Array<{ code: string; quantity: number }>) => {
+					setSuggestions(data);
+					setOpen(true);
+					setActiveIndex(data.length ? 0 : -1);
+				})
+				.catch(() => {
+					setSuggestions([]);
+					setOpen(false);
+					setActiveIndex(-1);
+				})
+				.finally(() => setLoading(false));
+		}, 200);
+		return () => clearTimeout(id);
+	}, [code]);
+
+	function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+		if (!open || suggestions.length === 0) {
+			if (e.key === "Enter") submit();
+			return;
+		}
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setActiveIndex(i => (i + 1) % suggestions.length);
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setActiveIndex(i => (i - 1 + suggestions.length) % suggestions.length);
+		} else if (e.key === "Enter") {
+			e.preventDefault();
+			const chosen = suggestions[activeIndex];
+			if (chosen) {
+				setCode(chosen.code);
+				setOpen(false);
+				router.push(
+					`/item?code=${encodeURIComponent(chosen.code.toUpperCase())}`
+				);
+			} else {
+				submit();
+			}
+		} else if (e.key === "Escape") {
+			setOpen(false);
+		}
 	}
 
 	return (
 		<div className="min-h-screen flex items-center justify-center p-6">
 			<div className="w-full max-w-md space-y-4">
 				<h1 className="text-2xl font-semibold tracking-tight">Lookup item</h1>
-				<div className="flex gap-2">
+				<div className="relative">
 					<Input
-						placeholder="Enter 5-digit code"
+						placeholder="Enter code"
 						value={code}
 						onChange={e => setCode(e.target.value)}
-						onKeyDown={e => {
-							if (e.key === "Enter") submit();
-						}}
-						maxLength={5}
+						onKeyDown={onKeyDown}
+						aria-autocomplete="list"
+						aria-expanded={open}
+						aria-controls="code-suggestions"
+						role="combobox"
 					/>
-					<Button onClick={submit} disabled={!isValid}>
+					{open && (
+						<div
+							id="code-suggestions"
+							role="listbox"
+							className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-md"
+						>
+							{loading && (
+								<div className="px-3 py-2 text-sm text-muted-foreground">
+									Searching…
+								</div>
+							)}
+							{!loading && suggestions.length === 0 && (
+								<div className="px-3 py-2 text-sm text-muted-foreground">
+									No matches
+								</div>
+							)}
+							{!loading &&
+								suggestions.map((s, idx) => (
+									<button
+										key={s.code + idx}
+										role="option"
+										aria-selected={idx === activeIndex}
+										onMouseDown={e => {
+											e.preventDefault();
+											setCode(s.code);
+											setOpen(false);
+											router.push(
+												`/item?code=${encodeURIComponent(s.code.toUpperCase())}`
+											);
+										}}
+										className={`flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground ${
+											idx === activeIndex
+												? "bg-accent text-accent-foreground"
+												: ""
+										}`}
+									>
+										<span className="font-mono">{s.code}</span>
+										<span className="text-xs text-muted-foreground">
+											qty {s.quantity}
+										</span>
+									</button>
+								))}
+						</div>
+					)}
+				</div>
+				<div className="flex gap-2">
+					<Button onClick={submit} className="shrink-0">
 						Go
 					</Button>
 				</div>
 				<div className="text-sm text-muted-foreground">
-					{code && !isValid ? (
-						<p>Codes must be exactly 5 alphanumeric characters.</p>
-					) : (
-						<p>Tip: You can press Enter to submit.</p>
-					)}
+					<p>Tip: You can press Enter to submit.</p>
 				</div>
 			</div>
 		</div>

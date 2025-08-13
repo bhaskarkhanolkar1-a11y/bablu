@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 type ItemState =
 	| { status: "idle" | "loading" }
 	| { status: "not_found"; code: string }
-	| { status: "ready"; code: string; quantity: number };
+	| { status: "ready"; code: string; quantity: number; location: string };
 
 // The component is renamed to ItemPageContent
 export default function ItemPageContent() {
@@ -35,7 +35,12 @@ export default function ItemPageContent() {
 					setState({ status: "not_found", code: codeParam });
 					return;
 				}
-				setState({ status: "ready", code: codeParam, quantity: data.quantity });
+				setState({
+					status: "ready",
+					code: codeParam,
+					quantity: data.quantity,
+					location: data.location ?? "",
+				});
 			})
 			.catch(() => {
 				if (canceled) return;
@@ -82,10 +87,10 @@ export default function ItemPageContent() {
 	if (state.status !== "ready") {
 		return null;
 	}
-	const { code, quantity } = state;
+	const { code, quantity, location } = state;
 
 	function applyUpdate(next: number) {
-		setState({ status: "ready", code, quantity: next });
+		setState({ status: "ready", code, quantity: next, location });
 		setUpdating(true);
 		fetch(`/api/item`, {
 			method: "PATCH",
@@ -103,6 +108,7 @@ export default function ItemPageContent() {
 							status: "ready",
 							code,
 							quantity: data.quantity,
+							location: data.location ?? "",
 						})
 					)
 					.catch(() => setState({ status: "not_found", code }));
@@ -117,8 +123,12 @@ export default function ItemPageContent() {
 		<div className="min-h-screen flex items-center justify-center p-6">
 			<div className="w-full max-w-md space-y-6">
 				<div className="space-y-1">
-					<p className="text-sm text-muted-foreground">Code</p>
+					<p className="text-sm text-muted-foreground">Part name</p>
 					<p className="text-lg font-mono">{code}</p>
+				</div>
+				<div className="space-y-1">
+					<p className="text-sm text-muted-foreground">Item location</p>
+					<p className="text-lg font-mono break-words">{location || "—"}</p>
 				</div>
 				<div className="flex items-center gap-4 justify-center">
 					<Button

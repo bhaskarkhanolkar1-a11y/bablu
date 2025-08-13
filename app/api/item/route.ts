@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuantityByCode, setQuantityByCode } from "@/lib/googleSheets";
+import { getItemByCode, setQuantityByCode } from "@/lib/googleSheets";
 
 export const runtime = "nodejs";
 
@@ -14,14 +14,19 @@ export async function GET(req: NextRequest) {
 	}
 	const code = codeRaw.trim().toUpperCase();
 	try {
-		const quantity = await getQuantityByCode(code);
-		if (quantity === null) {
+		const item = await getItemByCode(code);
+		if (item === null) {
 			return NextResponse.json(
-				{ found: false, code, quantity: null },
+				{ found: false, code, quantity: null, location: null },
 				{ status: 404 }
 			);
 		}
-		return NextResponse.json({ found: true, code, quantity });
+		return NextResponse.json({
+			found: true,
+			code,
+			quantity: item.quantity,
+			location: item.location,
+		});
 	} catch (error: unknown) {
 		const message =
 			error instanceof Error ? error.message : "Unknown error occurred";

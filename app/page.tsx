@@ -18,6 +18,7 @@ export default function HomePage() {
 	const [activeIndex, setActiveIndex] = React.useState(-1);
 
 	function submit() {
+		if (!code.trim()) return;
 		const value = code.trim().toUpperCase();
 		router.push(`/item?code=${encodeURIComponent(value)}`);
 	}
@@ -54,6 +55,9 @@ export default function HomePage() {
 	}, [code]);
 
 	function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+		if (e.key === "Enter") {
+			e.preventDefault();
+		}
 		if (!open || suggestions.length === 0) {
 			if (e.key === "Enter") submit();
 			return;
@@ -65,7 +69,6 @@ export default function HomePage() {
 			e.preventDefault();
 			setActiveIndex(i => (i - 1 + suggestions.length) % suggestions.length);
 		} else if (e.key === "Enter") {
-			e.preventDefault();
 			const chosen = suggestions[activeIndex];
 			if (chosen) {
 				setCode(chosen.code);
@@ -82,74 +85,85 @@ export default function HomePage() {
 	}
 
 	return (
-		<div className="min-h-screen flex items-center justify-center p-6">
-			<div className="w-full max-w-md space-y-4">
-				<h1 className="text-2xl font-semibold tracking-tight">Lookup item</h1>
-				<div className="relative">
-					<Input
-						placeholder="Enter code"
-						value={code}
-						onChange={e => setCode(e.target.value)}
-						onKeyDown={onKeyDown}
-						aria-autocomplete="list"
-						aria-expanded={open}
-						aria-controls="code-suggestions"
-						role="combobox"
-					/>
-					{open && (
-						<div
-							id="code-suggestions"
-							role="listbox"
-							className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-md"
-						>
-							{loading && (
-								<div className="px-3 py-2 text-sm text-muted-foreground">
-									Searching…
-								</div>
-							)}
-							{!loading && suggestions.length === 0 && (
-								<div className="px-3 py-2 text-sm text-muted-foreground">
-									No matches
-								</div>
-							)}
-							{!loading &&
-								suggestions.map((s, idx) => (
-									<button
-										key={s.code + idx}
-										role="option"
-										aria-selected={idx === activeIndex}
-										onMouseDown={e => {
-											e.preventDefault();
-											setCode(s.code);
-											setOpen(false);
-											router.push(
-												`/item?code=${encodeURIComponent(s.code.toUpperCase())}`
-											);
-										}}
-										className={`flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground ${
-											idx === activeIndex
-												? "bg-accent text-accent-foreground"
-												: ""
-										}`}
-									>
-										<span className="font-mono">{s.code}</span>
-										<span className="text-xs text-muted-foreground">
-											qty {s.quantity}
-										</span>
-									</button>
-								))}
-						</div>
-					)}
-				</div>
-				<div className="flex gap-2">
-					<Button onClick={submit} className="shrink-0">
-						Go
+		<main className="min-h-screen flex items-center justify-center p-6">
+			<div className="w-full max-w-md mx-auto">
+                <div className="flex flex-col items-center text-center mb-8">
+                    <Image 
+                        src="/logo.png" 
+                        alt="Crompton Greaves Logo" 
+                        width={160}
+                        height={48} 
+                        className="mb-6"
+                        priority
+                    />
+                    <h1 className="text-3xl font-bold tracking-tight">Inventory Lookup</h1>
+                    <p className="text-muted-foreground mt-2">
+                        Enter a product code to check its quantity and location.
+                    </p>
+                </div>
+				<div className="space-y-4">
+					<div className="relative">
+						<Input
+							placeholder="Enter product code..."
+							value={code}
+							onChange={e => setCode(e.target.value)}
+							onKeyDown={onKeyDown}
+							aria-autocomplete="list"
+							aria-expanded={open}
+							aria-controls="code-suggestions"
+							role="combobox"
+							className="h-12 text-lg"
+						/>
+						{open && (
+							<div
+								id="code-suggestions"
+								role="listbox"
+								className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-lg"
+							>
+								{loading && (
+									<div className="px-3 py-2 text-sm text-muted-foreground">
+										Searching...
+									</div>
+								)}
+								{!loading && suggestions.length === 0 && (
+									<div className="px-3 py-2 text-sm text-muted-foreground">
+										No matches found.
+									</div>
+								)}
+								{!loading &&
+									suggestions.map((s, idx) => (
+										<button
+											key={s.code + idx}
+											role="option"
+											aria-selected={idx === activeIndex}
+											onMouseDown={e => {
+												e.preventDefault();
+												setCode(s.code);
+												setOpen(false);
+												router.push(
+													`/item?code=${encodeURIComponent(s.code.toUpperCase())}`
+												);
+											}}
+											className={`flex w-full items-center justify-between px-3 py-2 text-sm text-left hover:bg-foreground/5 dark:hover:bg-foreground/10 ${
+												idx === activeIndex
+													? "bg-foreground/5 dark:bg-foreground/10"
+													: ""
+											}`}
+										>
+											<span className="font-mono">{s.code}</span>
+											<span className="text-xs text-muted-foreground">
+												{s.quantity} in stock
+											</span>
+										</button>
+									))}
+							</div>
+						)}
+					</div>
+					<Button onClick={submit} className="w-full h-11 text-base">
+						Search
 					</Button>
 				</div>
-				<div className="text-sm text-muted-foreground">
-					<p>Tip: You can press Enter to submit.</p>
-				</div>
 			</div>
-		</div>
+		</main>
 	);
 }

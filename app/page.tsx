@@ -98,7 +98,7 @@ export default function HomePage() {
                     />
                     <h1 className="text-3xl font-bold tracking-tight">Inventory Lookup</h1>
                     <p className="text-muted-foreground mt-2">
-                        Enter a product code to check its quantity and location.
+                        Enter  product name to check its quantity and location.
                     </p>
                 </div>
 				<div className="space-y-4">

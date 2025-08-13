@@ -5,6 +5,7 @@
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 type ItemState =
 	| { status: "idle" | "loading" }
@@ -53,10 +54,10 @@ export default function ItemPageContent() {
 
 	if (!codeParam) {
 		return (
-			<div className="min-h-screen flex items-center justify-center p-6">
-				<div className="space-y-4 text-center">
-					<p className="text-lg">No code provided.</p>
-					<Button onClick={() => router.push("/")}>Go to home</Button>
+			<div className="min-h-screen flex items-center justify-center p-6 text-center">
+				<div className="space-y-4">
+					<p className="text-lg">No item code provided.</p>
+					<Button onClick={() => router.push("/")}>Back to Search</Button>
 				</div>
 			</div>
 		);
@@ -65,18 +66,18 @@ export default function ItemPageContent() {
 	if (state.status === "loading" || state.status === "idle") {
 		return (
 			<div className="min-h-screen flex items-center justify-center p-6">
-				<p>Loading…</p>
+				<p className="animate-pulse">Loading item...</p>
 			</div>
 		);
 	}
 
 	if (state.status === "not_found") {
 		return (
-			<div className="min-h-screen flex items-center justify-center p-6">
-				<div className="space-y-4 text-center">
+			<div className="min-h-screen flex items-center justify-center p-6 text-center">
+				<div className="space-y-4">
 					<p className="text-lg">
-						No product found with this code:{" "}
-						<span className="font-mono">{state.code}</span>
+						Product not found for code:{" "}
+						<span className="font-mono bg-foreground/10 px-2 py-1 rounded-md">{state.code}</span>
 					</p>
 					<Button onClick={() => router.push("/")}>Try another code</Button>
 				</div>
@@ -90,17 +91,16 @@ export default function ItemPageContent() {
 	const { code, quantity, location } = state;
 
 	function applyUpdate(next: number) {
-		setState({ status: "ready", code, quantity: next, location });
+        const optimisticState = { status: "ready" as const, code, quantity: next, location };
+		setState(optimisticState);
 		setUpdating(true);
 		fetch(`/api/item`, {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ code, quantity: next }),
 		})
-			.then(res => {
-				if (!res.ok) throw new Error("Update failed");
-			})
 			.catch(() => {
+                // On failure, revert to the previous state (or re-fetch)
 				fetch(`/api/item?code=${encodeURIComponent(code)}`)
 					.then(r => r.json())
 					.then(data =>
@@ -120,43 +120,64 @@ export default function ItemPageContent() {
 	const inc = () => applyUpdate(quantity + 1);
 
 	return (
-		<div className="min-h-screen flex items-center justify-center p-6">
-			<div className="w-full max-w-md space-y-6">
-				<div className="space-y-1">
-					<p className="text-sm text-muted-foreground">Part name</p>
-					<p className="text-lg font-mono">{code}</p>
-				</div>
-				<div className="space-y-1">
-					<p className="text-sm text-muted-foreground">Item location</p>
-					<p className="text-lg font-mono break-words">{location || "—"}</p>
-				</div>
-				<div className="flex items-center gap-4 justify-center">
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={dec}
-						disabled={updating || quantity <= 0}
-					>
-						−
-					</Button>
-					<div className="w-24 text-center text-3l font-semibold tabular-nums">
-						{quantity}
-					</div>
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={inc}
-						disabled={updating}
-					>
-						+
-					</Button>
-				</div>
-				<div className="flex justify-center">
+		<main className="min-h-screen flex items-center justify-center p-6">
+			<div className="w-full max-w-sm">
+                <div className="flex justify-center mb-6">
+                    <Image 
+                        src="/logo.png" 
+                        alt="Crompton Greaves Logo" 
+                        width={128}
+                        height={38}
+                        priority
+                    />
+                </div>
+                <div className="bg-background border rounded-lg shadow-lg p-8 space-y-8">
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Product Code</p>
+                        <h1 className="text-3xl font-bold font-mono tracking-wider">{code}</h1>
+                    </div>
+                    
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Location</p>
+                        <p className="text-2xl font-semibold break-words">{location || "N/A"}</p>
+                    </div>
+
+                    <div className="text-center space-y-4">
+                        <p className="text-sm text-muted-foreground">Quantity</p>
+                        <div className="flex items-center gap-4 justify-center">
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={dec}
+                                disabled={updating || quantity <= 0}
+                                className="w-16 h-16 rounded-full text-2xl"
+                            >
+                                −
+                            </Button>
+                            <div
+                                className={`w-32 text-center text-6xl font-bold tabular-nums transition-opacity ${updating ? 'opacity-50' : 'opacity-100'}`}
+                            >
+                                {quantity}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={inc}
+                                disabled={updating}
+                                className="w-16 h-16 rounded-full text-2xl"
+                            >
+                                +
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+				<div className="mt-6 flex justify-center">
 					<Button variant="ghost" onClick={() => router.push("/")}>
-						Change code
+						← Search for another item
 					</Button>
 				</div>
 			</div>
-		</div>
+		</main>
 	);
 }

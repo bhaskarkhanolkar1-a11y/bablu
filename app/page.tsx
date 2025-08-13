@@ -98,7 +98,7 @@ export default function HomePage() {
                     />
                     <h1 className="text-3xl font-bold tracking-tight">Inventory Lookup</h1>
                     <p className="text-muted-foreground mt-2">
-                        Enter  product name to check its quantity and location.
+                        Enter a product code to check its quantity and location.
                     </p>
                 </div>
 				<div className="space-y-4">
@@ -118,7 +118,7 @@ export default function HomePage() {
 							<div
 								id="code-suggestions"
 								role="listbox"
-								className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-lg"
+								className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-lg max-h-60 overflow-y-auto"
 							>
 								{loading && (
 									<div className="px-3 py-2 text-sm text-muted-foreground">

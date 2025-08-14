@@ -29,35 +29,6 @@ function getSheetsClient(): SheetsClient {
 const SHEET_ID = () => getEnv("GOOGLE_SHEETS_ID")!;
 const SHEET_TAB = () => getEnv("GOOGLE_SHEETS_TAB", false) || "Sheet1";
 
-// Assumes two columns: A = code, B = quantity. Header row optional; we will skip
-// the first row if it contains non-numeric quantity and non-5-char code.
-export async function getQuantityByCode(code: string): Promise<number | null> {
-	const sheets = getSheetsClient();
-	const range = `${SHEET_TAB()}!A:B`;
-	const resp = await sheets.spreadsheets.values.get({
-		spreadsheetId: SHEET_ID(),
-		range,
-		majorDimension: "ROWS",
-	});
-	const rows = resp.data.values || [];
-	if (rows.length === 0) return null;
-
-	for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
-		const row = rows[rowIndex];
-		if (!row || row.length === 0) continue;
-		const rowCode = String(row[0] ?? "")
-			.trim()
-			.toUpperCase();
-		if (rowCode === code) {
-			const qtyStr = String(row[1] ?? "").trim();
-			const qty = Number.parseInt(qtyStr, 10);
-			if (Number.isFinite(qty)) return qty;
-			return 0;
-		}
-	}
-	return null;
-}
-
 export async function getItemByCode(
 	code: string
 ): Promise<{ quantity: number; location: string } | null> {
@@ -88,12 +59,12 @@ export async function getItemByCode(
 	return null;
 }
 
-export async function setQuantityByCode(
+export async function updateItemByCode(
 	code: string,
-	quantity: number
+	data: { quantity?: number; location?: string }
 ): Promise<boolean> {
 	const sheets = getSheetsClient();
-	const range = `${SHEET_TAB()}!A:B`;
+	const range = `${SHEET_TAB()}!A:C`; // Read columns A, B, and C
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
@@ -118,15 +89,22 @@ export async function setQuantityByCode(
 		return false; // not found
 	}
 
-	// Sheets API uses 1-based row numbers and A1 notation.
-	const sheetRowNumber = targetRowIndex + 1; // including header if present
-	const updateRange = `${SHEET_TAB()}!B${sheetRowNumber}:B${sheetRowNumber}`;
+	const sheetRowNumber = targetRowIndex + 1; // Sheets API uses 1-based row numbers
+
+	// Prepare the data to be updated
+	const existingRow = rows[targetRowIndex];
+	const newQuantity = data.quantity ?? existingRow[1];
+	const newLocation = data.location ?? existingRow[2];
+
+	// Update columns B (quantity) and C (location) for the found row
+	const updateRange = `${SHEET_TAB()}!B${sheetRowNumber}:C${sheetRowNumber}`;
 	await sheets.spreadsheets.values.update({
 		spreadsheetId: SHEET_ID(),
 		range: updateRange,
 		valueInputOption: "RAW",
-		requestBody: { values: [[quantity]] },
+		requestBody: { values: [[newQuantity, newLocation]] },
 	});
+
 	return true;
 }
 

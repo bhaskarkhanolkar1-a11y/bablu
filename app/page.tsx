@@ -104,7 +104,7 @@ export default function HomePage() {
                         Enter a product code to check its quantity and location.
                     </p>
                 </div>
-				<div className="space-y-4">
+				<div className="space-y-4 relative z-20"> {/* <-- FIX IS HERE */}
 					<div className="relative">
 						<Input
 							placeholder="Enter product code..."
@@ -164,7 +164,7 @@ export default function HomePage() {
 					</div>
 					<Button
                         onClick={submit}
-                        className="w-full h-11 text-base relative"
+                        className="w-full h-11 text-base"
                     >
 						Search
 					</Button>

@@ -5,7 +5,7 @@
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Make sure you have this import
+import { Input } from "@/components/ui/input";
 import Image from "next/image";
 
 type ItemState =
@@ -20,9 +20,11 @@ export default function ItemPageContent() {
 	const [state, setState] = React.useState<ItemState>({ status: "idle" });
 	const [updating, setUpdating] = React.useState(false);
 
-    // New state for editing location
+    // State for editing location and code
     const [isEditingLocation, setIsEditingLocation] = React.useState(false);
     const [newLocation, setNewLocation] = React.useState("");
+    const [isEditingCode, setIsEditingCode] = React.useState(false);
+    const [newCode, setNewCode] = React.useState("");
 
 
 	React.useEffect(() => {
@@ -48,6 +50,7 @@ export default function ItemPageContent() {
 					location: data.location ?? "",
 				});
                 setNewLocation(data.location ?? "");
+                setNewCode(codeParam);
 			})
 			.catch(() => {
 				if (canceled) return;
@@ -96,9 +99,7 @@ export default function ItemPageContent() {
 	}
 	const { code, quantity, location } = state;
 
-	function applyUpdate(data: {quantity?: number, location?: string}) {
-        const optimisticState = { ...state, ...data } as ItemState;
-		setState(optimisticState);
+	function applyUpdate(data: { newCode?: string, quantity?: number, location?: string }) {
 		setUpdating(true);
 
 		fetch(`/api/item`, {
@@ -106,7 +107,18 @@ export default function ItemPageContent() {
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ code, ...data }),
 		})
+			.then(() => {
+                if (data.newCode) {
+                    // If code was changed, we must redirect to the new URL
+                    router.push(`/item?code=${encodeURIComponent(data.newCode)}`);
+                } else {
+                    // Otherwise, just update the state
+                    const optimisticState = { ...state, ...data } as ItemState;
+		            setState(optimisticState);
+                }
+            })
 			.catch(() => {
+				// On failure, re-fetch the original item's data
 				fetch(`/api/item?code=${encodeURIComponent(code)}`)
 					.then(r => r.json())
 					.then(serverData =>
@@ -120,14 +132,22 @@ export default function ItemPageContent() {
 					.catch(() => setState({ status: "not_found", code }));
 			})
 			.finally(() => {
-                setUpdating(false)
+                setUpdating(false);
                 setIsEditingLocation(false);
+                setIsEditingCode(false);
             });
 	}
 
 	const dec = () => applyUpdate({ quantity: Math.max(0, quantity - 1) });
 	const inc = () => applyUpdate({ quantity: quantity + 1 });
     const handleLocationSave = () => applyUpdate({ location: newLocation });
+    const handleCodeSave = () => {
+        if (newCode.trim() && newCode.trim().toUpperCase() !== code) {
+            applyUpdate({ newCode: newCode.trim().toUpperCase() });
+        } else {
+            setIsEditingCode(false);
+        }
+    }
 
 	return (
 		<main className="min-h-screen flex items-center justify-center p-6">
@@ -144,7 +164,37 @@ export default function ItemPageContent() {
                 <div className="bg-background border rounded-lg shadow-lg p-8 space-y-8">
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Product Code</p>
-                        <h1 className="text-3xl font-bold font-mono tracking-wider">{code}</h1>
+                        {isEditingCode ? (
+                            <div className="mt-2 space-y-2">
+                                <Input
+                                    type="text"
+                                    value={newCode}
+                                    onChange={(e) => setNewCode(e.target.value)}
+                                    className="text-center text-3xl font-bold font-mono tracking-wider"
+                                    disabled={updating}
+                                />
+                                <div className="flex gap-2 justify-center">
+                                    <Button onClick={handleCodeSave} disabled={updating} size="sm">
+                                        {updating ? 'Saving...' : 'Save'}
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setIsEditingCode(false)} disabled={updating} size="sm">
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                             <div className="group flex items-center justify-center gap-2">
+                                <h1 className="text-3xl font-bold font-mono tracking-wider">{code}</h1>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsEditingCode(true)}
+                                    className="opacity-0 group-hover:opacity-100 border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+                                >
+                                    Edit
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="text-center">
@@ -174,7 +224,7 @@ export default function ItemPageContent() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsEditingLocation(true)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="opacity-0 group-hover:opacity-100 border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
                                 >
                                     Edit
                                 </Button>

@@ -72,4 +72,24 @@ export default function HomePage() {
 					setOpen(false);
 					setActiveIndex(-1);
 				})
-				.
+				.finally(() => setLoading(false));
+		}, 200);
+		return () => clearTimeout(id);
+	}, [code]);
+
+	function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+		if (e.key === "Enter") {
+			e.preventDefault();
+		}
+		if (!open || suggestions.length === 0) {
+			if (e.key === "Enter") submit();
+			return;
+		}
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setActiveIndex(i => (i + 1) % suggestions.length);
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setActiveIndex(i => (i - 1 + suggestions.length) % suggestions.length);
+		} else if (e.key === "Enter") {
+			const chosen

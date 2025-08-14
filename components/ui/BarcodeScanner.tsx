@@ -40,7 +40,8 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
 			/* verbose= */ false
 		);
 
-		scanner.render(onScanSuccess, error => {
+		// The fix is changing 'error' to '_error' below
+		scanner.render(onScanSuccess, _error => {
 			// The library will log errors, we can ignore them here.
 		});
 

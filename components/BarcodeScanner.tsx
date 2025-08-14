@@ -5,21 +5,19 @@
 import {
 	Html5QrcodeScanner,
 	Html5QrcodeSupportedFormats,
+	type QrcodeSuccessCallback, // Corrected import for the type
 } from "html5-qrcode";
-import type { QrCodeSuccessCallback } from "html5-qrcode/esm/core";
 import * as React from "react";
 
 const qrcodeRegionId = "html5qr-code-full-region";
 
 interface BarcodeScannerProps {
-	onScanSuccess: QrCodeSuccessCallback;
+	onScanSuccess: QrcodeSuccessCallback;
 	onScanFailure?: (error: string) => void;
 }
 
 export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
 	React.useEffect(() => {
-		// A list of common barcode formats to support.
-		// This helps the scanner focus on what to look for.
 		const formatsToSupport = [
 			Html5QrcodeSupportedFormats.QR_CODE,
 			Html5QrcodeSupportedFormats.EAN_13,
@@ -37,21 +35,23 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
 				},
 				fps: 10,
 				rememberLastUsedCamera: true,
-				// Pass the formats to the scanner
 				formatsToSupport: formatsToSupport,
 			},
 			/* verbose= */ false
 		);
 
-		scanner.render(onScanSuccess, error => {
-			// The library will log errors, we can ignore them here.
+		scanner.render(onScanSuccess, (_error) => {
+			// The library will log errors; we can ignore them here.
 		});
 
 		// Cleanup function to stop the scanner when the component unmounts
 		return () => {
-			scanner.clear().catch(error => {
-				console.error("Failed to clear html5-qrcode scanner. ", error);
-			});
+			// It's important to stop the scanner when the component is removed from the DOM.
+			if (scanner && scanner.getState()) {
+				scanner.clear().catch(error => {
+					console.error("Failed to clear html5-qrcode scanner.", error);
+				});
+			}
 		};
 	}, [onScanSuccess]);
 

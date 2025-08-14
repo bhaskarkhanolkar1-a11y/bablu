@@ -16,15 +16,13 @@ type ItemState =
 export default function ItemPageContent() {
 	const params = useSearchParams();
 	const router = useRouter();
-	const codeParam = params.get("code")?.trim().toUpperCase() || "";
+	const codeParam = params.get("code")?.trim() || "";
 	const [state, setState] = React.useState<ItemState>({ status: "idle" });
 	const [updating, setUpdating] = React.useState(false);
 
-    // State for editing location and code
+    // State for editing location
     const [isEditingLocation, setIsEditingLocation] = React.useState(false);
     const [newLocation, setNewLocation] = React.useState("");
-    const [isEditingCode, setIsEditingCode] = React.useState(false);
-    const [newCode, setNewCode] = React.useState("");
 
 
 	React.useEffect(() => {
@@ -45,12 +43,11 @@ export default function ItemPageContent() {
 				}
 				setState({
 					status: "ready",
-					code: codeParam,
+					code: data.code,
 					quantity: data.quantity,
 					location: data.location ?? "",
 				});
                 setNewLocation(data.location ?? "");
-                setNewCode(codeParam);
 			})
 			.catch(() => {
 				if (canceled) return;
@@ -99,7 +96,7 @@ export default function ItemPageContent() {
 	}
 	const { code, quantity, location } = state;
 
-	function applyUpdate(data: { newCode?: string, quantity?: number, location?: string }) {
+	function applyUpdate(data: { quantity?: number, location?: string }) {
 		setUpdating(true);
 
 		fetch(`/api/item`, {
@@ -108,14 +105,8 @@ export default function ItemPageContent() {
 			body: JSON.stringify({ code, ...data }),
 		})
 			.then(() => {
-                if (data.newCode) {
-                    // If code was changed, we must redirect to the new URL
-                    router.push(`/item?code=${encodeURIComponent(data.newCode)}`);
-                } else {
-                    // Otherwise, just update the state
-                    const optimisticState = { ...state, ...data } as ItemState;
-		            setState(optimisticState);
-                }
+                const optimisticState = { ...state, ...data } as ItemState;
+		        setState(optimisticState);
             })
 			.catch(() => {
 				// On failure, re-fetch the original item's data
@@ -134,20 +125,12 @@ export default function ItemPageContent() {
 			.finally(() => {
                 setUpdating(false);
                 setIsEditingLocation(false);
-                setIsEditingCode(false);
             });
 	}
 
 	const dec = () => applyUpdate({ quantity: Math.max(0, quantity - 1) });
 	const inc = () => applyUpdate({ quantity: quantity + 1 });
     const handleLocationSave = () => applyUpdate({ location: newLocation });
-    const handleCodeSave = () => {
-        if (newCode.trim() && newCode.trim().toUpperCase() !== code) {
-            applyUpdate({ newCode: newCode.trim().toUpperCase() });
-        } else {
-            setIsEditingCode(false);
-        }
-    }
 
 	return (
 		<main className="min-h-screen flex items-center justify-center p-6">
@@ -162,41 +145,12 @@ export default function ItemPageContent() {
                     />
                 </div>
                 <div className="bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg p-8 space-y-8">
+                    {/* --- PRODUCT CODE SECTION (NO EDIT BUTTON) --- */}
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Product Code</p>
-                        {isEditingCode ? (
-                            <div className="mt-2 space-y-2">
-                                <Input
-                                    type="text"
-                                    value={newCode}
-                                    onChange={(e) => setNewCode(e.target.value)}
-                                    className="text-center text-3xl font-bold font-mono tracking-wider"
-                                    disabled={updating}
-                                />
-                                <div className="flex gap-2 justify-center">
-                                    <Button onClick={handleCodeSave} disabled={updating} size="sm">
-                                        {updating ? 'Saving...' : 'Save'}
-                                    </Button>
-                                    <Button variant="ghost" onClick={() => setIsEditingCode(false)} disabled={updating} size="sm">
-                                        Cancel
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                             <div className="flex items-center justify-center gap-2">
-                                <h1 className="text-3xl font-bold font-mono tracking-wider">{code}</h1>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setIsEditingCode(true)}
-                                    // --- CHANGE IS HERE ---
-                                    className="border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
-                                >
-                                    Edit
-                                </Button>
-                            </div>
-                        )}
+                        <h1 className="text-3xl font-bold font-mono tracking-wider mt-2">{code}</h1>
                     </div>
+                    {/* --- END OF SECTION --- */}
 
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Location</p>
@@ -225,7 +179,6 @@ export default function ItemPageContent() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsEditingLocation(true)}
-                                    // --- AND CHANGE IS HERE ---
                                     className="border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
                                 >
                                     Edit

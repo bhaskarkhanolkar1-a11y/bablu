@@ -33,7 +33,7 @@ export async function getItemByCode(
 	code: string
 ): Promise<{ quantity: number; location: string } | null> {
 	const sheets = getSheetsClient();
-	const range = `${SHEET_TAB()}!A:C`;
+	const range = `${SHEET_TAB()}!A:C`; // Read columns A, B, and C
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
@@ -59,12 +59,13 @@ export async function getItemByCode(
 	return null;
 }
 
-export async function updateItemByCode(
-	code: string,
-	data: { quantity?: number; location?: string }
+// NEW: A more robust update function
+export async function updateItem(
+	currentCode: string,
+	updateData: { newCode?: string; quantity?: number; location?: string }
 ): Promise<boolean> {
 	const sheets = getSheetsClient();
-	const range = `${SHEET_TAB()}!A:C`; // Read columns A, B, and C
+	const range = `${SHEET_TAB()}!A:C`;
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
@@ -72,47 +73,46 @@ export async function updateItemByCode(
 	});
 	const rows = resp.data.values || [];
 
-	// Find row index for code
-	let targetRowIndex: number | null = null; // zero-based within returned rows
+	let targetRowIndex: number | null = null;
 	for (let i = 0; i < rows.length; i += 1) {
 		const row = rows[i];
 		const rowCode = String(row?.[0] ?? "")
 			.trim()
 			.toUpperCase();
-		if (rowCode === code) {
+		if (rowCode === currentCode) {
 			targetRowIndex = i;
 			break;
 		}
 	}
 
 	if (targetRowIndex === null) {
-		return false; // not found
+		return false; // Item not found
 	}
 
-	const sheetRowNumber = targetRowIndex + 1; // Sheets API uses 1-based row numbers
-
-	// Prepare the data to be updated
+	const sheetRowNumber = targetRowIndex + 1;
 	const existingRow = rows[targetRowIndex];
-	const newQuantity = data.quantity ?? existingRow[1];
-	const newLocation = data.location ?? existingRow[2];
 
-	// Update columns B (quantity) and C (location) for the found row
-	const updateRange = `${SHEET_TAB()}!B${sheetRowNumber}:C${sheetRowNumber}`;
+	// Prepare the new values, using existing ones as fallbacks
+	const code = updateData.newCode ?? existingRow[0];
+	const quantity = updateData.quantity ?? existingRow[1];
+	const location = updateData.location ?? existingRow[2];
+
+	const updateRange = `${SHEET_TAB()}!A${sheetRowNumber}:C${sheetRowNumber}`;
 	await sheets.spreadsheets.values.update({
 		spreadsheetId: SHEET_ID(),
 		range: updateRange,
 		valueInputOption: "RAW",
-		requestBody: { values: [[newQuantity, newLocation]] },
+		requestBody: { values: [[code, quantity, location]] },
 	});
 
 	return true;
 }
 
+
 export async function getAllCodeQuantity(): Promise<
 	Array<{ code: string; quantity: number }>
 > {
 	const sheets = getSheetsClient();
-	// Sheet has 4 columns (code, quantity, title, qr) but we only need A and B
 	const range = `${SHEET_TAB()}!A:B`;
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
@@ -124,10 +124,9 @@ export async function getAllCodeQuantity(): Promise<
 	for (let i = 0; i < rows.length; i += 1) {
 		const row = rows[i] ?? [];
 		const codeRaw = String(row[0] ?? "").trim();
-		if (!codeRaw) continue; // skip empty code rows
+		if (!codeRaw) continue;
 		const qtyStr = String(row[1] ?? "").trim();
 		const qtyParsed = Number.parseInt(qtyStr, 10);
-		// Skip likely header row if first row has non-numeric quantity
 		if (i === 0 && !Number.isFinite(qtyParsed)) continue;
 		const quantity = Number.isFinite(qtyParsed) ? qtyParsed : 0;
 		results.push({ code: codeRaw, quantity });

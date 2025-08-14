@@ -5,8 +5,8 @@
 import {
 	Html5QrcodeScanner,
 	Html5QrcodeSupportedFormats,
+	type QrcodeSuccessCallback, // Corrected import for the type
 } from "html5-qrcode";
-import type { QrcodeSuccessCallback } from "html5-qrcode/esm/core";
 import * as React from "react";
 
 const qrcodeRegionId = "html5qr-code-full-region";
@@ -40,16 +40,18 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
 			/* verbose= */ false
 		);
 
-		// The fix is changing 'error' to '_error' below
-		scanner.render(onScanSuccess, _error => {
-			// The library will log errors, we can ignore them here.
+		scanner.render(onScanSuccess, (_error) => {
+			// The library will log errors; we can ignore them here.
 		});
 
 		// Cleanup function to stop the scanner when the component unmounts
 		return () => {
-			scanner.clear().catch(error => {
-				console.error("Failed to clear html5-qrcode scanner. ", error);
-			});
+			// It's important to stop the scanner when the component is removed from the DOM.
+			if (scanner && scanner.getState()) {
+				scanner.clear().catch(error => {
+					console.error("Failed to clear html5-qrcode scanner.", error);
+				});
+			}
 		};
 	}, [onScanSuccess]);
 

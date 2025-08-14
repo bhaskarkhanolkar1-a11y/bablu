@@ -23,7 +23,6 @@ export default function HomePage() {
 		router.push(`/item?code=${encodeURIComponent(value)}`);
 	}
 
-	// Debounced fetch of suggestions after 2+ characters
 	React.useEffect(() => {
 		const q = code.trim();
 		if (q.length < 2) {
@@ -88,11 +87,11 @@ export default function HomePage() {
 		<main className="min-h-screen flex items-center justify-center p-6">
 			<div className="w-full max-w-md mx-auto">
                 <div className="flex flex-col items-center text-center mb-8">
-                    <Image 
-                        src="/logo.png" 
-                        alt="Crompton Greaves Logo" 
+                    <Image
+                        src="/logo.png"
+                        alt="Crompton Greaves Logo"
                         width={160}
-                        height={48} 
+                        height={48}
                         className="mb-6"
                         priority
                     />
@@ -163,6 +162,31 @@ export default function HomePage() {
 						Search
 					</Button>
 				</div>
+
+                {/* --- NEW SECTION ADDED HERE --- */}
+                <div className="mt-12 text-center text-muted-foreground">
+                    <p className="text-sm">
+                        Powered by students of GEC
+                    </p>
+                    {/* --- LOGO PLACEHOLDER --- */}
+                    {/* 1. Upload your college logo to the 'public' folder.
+                        2. Rename the file to something simple (e.g., 'gec-logo.png').
+                        3. Update the 'src' below to match the filename.
+                    */}
+                    <div className="flex justify-center my-4">
+                        <Image 
+                            src="/gec-logo.png" // <-- UPDATE THIS FILENAME
+                            alt="GEC College Logo"
+                            width={80} // Adjust size as needed
+                            height={80} // Adjust size as needed
+                        />
+                    </div>
+                    <p className="text-xs">
+                        Bhaskar Khanolkar, Tapi Tajung, Ankush, Loanwang
+                    </p>
+                </div>
+                {/* --- END OF NEW SECTION --- */}
+
 			</div>
 		</main>
 	);

@@ -5,6 +5,7 @@
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input"; // Make sure you have this import
 import Image from "next/image";
 
 type ItemState =
@@ -12,13 +13,17 @@ type ItemState =
 	| { status: "not_found"; code: string }
 	| { status: "ready"; code: string; quantity: number; location: string };
 
-// The component is renamed to ItemPageContent
 export default function ItemPageContent() {
 	const params = useSearchParams();
 	const router = useRouter();
 	const codeParam = params.get("code")?.trim().toUpperCase() || "";
 	const [state, setState] = React.useState<ItemState>({ status: "idle" });
 	const [updating, setUpdating] = React.useState(false);
+
+    // New state for editing location
+    const [isEditingLocation, setIsEditingLocation] = React.useState(false);
+    const [newLocation, setNewLocation] = React.useState("");
+
 
 	React.useEffect(() => {
 		if (!codeParam) return;
@@ -42,6 +47,7 @@ export default function ItemPageContent() {
 					quantity: data.quantity,
 					location: data.location ?? "",
 				});
+                setNewLocation(data.location ?? "");
 			})
 			.catch(() => {
 				if (canceled) return;
@@ -90,34 +96,38 @@ export default function ItemPageContent() {
 	}
 	const { code, quantity, location } = state;
 
-	function applyUpdate(next: number) {
-        const optimisticState = { status: "ready" as const, code, quantity: next, location };
+	function applyUpdate(data: {quantity?: number, location?: string}) {
+        const optimisticState = { ...state, ...data } as ItemState;
 		setState(optimisticState);
 		setUpdating(true);
+
 		fetch(`/api/item`, {
 			method: "PATCH",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ code, quantity: next }),
+			body: JSON.stringify({ code, ...data }),
 		})
 			.catch(() => {
-                // On failure, revert to the previous state (or re-fetch)
 				fetch(`/api/item?code=${encodeURIComponent(code)}`)
 					.then(r => r.json())
-					.then(data =>
+					.then(serverData =>
 						setState({
 							status: "ready",
 							code,
-							quantity: data.quantity,
-							location: data.location ?? "",
+							quantity: serverData.quantity,
+							location: serverData.location ?? "",
 						})
 					)
 					.catch(() => setState({ status: "not_found", code }));
 			})
-			.finally(() => setUpdating(false));
+			.finally(() => {
+                setUpdating(false)
+                setIsEditingLocation(false);
+            });
 	}
 
-	const dec = () => applyUpdate(Math.max(0, quantity - 1));
-	const inc = () => applyUpdate(quantity + 1);
+	const dec = () => applyUpdate({ quantity: Math.max(0, quantity - 1) });
+	const inc = () => applyUpdate({ quantity: quantity + 1 });
+    const handleLocationSave = () => applyUpdate({ location: newLocation });
 
 	return (
 		<main className="min-h-screen flex items-center justify-center p-6">
@@ -139,7 +149,37 @@ export default function ItemPageContent() {
 
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Location</p>
-                        <p className="text-2xl font-semibold break-words">{location || "N/A"}</p>
+                        {isEditingLocation ? (
+                            <div className="mt-2 space-y-2">
+                                <Input
+                                    type="text"
+                                    value={newLocation}
+                                    onChange={(e) => setNewLocation(e.target.value)}
+                                    className="text-center text-lg"
+                                    disabled={updating}
+                                />
+                                <div className="flex gap-2 justify-center">
+                                    <Button onClick={handleLocationSave} disabled={updating} size="sm">
+                                        {updating ? 'Saving...' : 'Save'}
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setIsEditingLocation(false)} disabled={updating} size="sm">
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="group flex items-center justify-center gap-2">
+                                <p className="text-2xl font-semibold break-words">{location || "N/A"}</p>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsEditingLocation(true)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    Edit
+                                </Button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="text-center space-y-4">

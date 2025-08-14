@@ -161,7 +161,7 @@ export default function ItemPageContent() {
                         priority
                     />
                 </div>
-                <div className="bg-background border rounded-lg shadow-lg p-8 space-y-8">
+                <div className="bg-background/80 backdrop-blur-sm border rounded-lg shadow-lg p-8 space-y-8">
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Product Code</p>
                         {isEditingCode ? (
@@ -183,13 +183,14 @@ export default function ItemPageContent() {
                                 </div>
                             </div>
                         ) : (
-                             <div className="group flex items-center justify-center gap-2">
+                             <div className="flex items-center justify-center gap-2">
                                 <h1 className="text-3xl font-bold font-mono tracking-wider">{code}</h1>
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsEditingCode(true)}
-                                    className="opacity-0 group-hover:opacity-100 border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+                                    // --- CHANGE IS HERE ---
+                                    className="border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
                                 >
                                     Edit
                                 </Button>
@@ -218,13 +219,14 @@ export default function ItemPageContent() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="group flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                                 <p className="text-2xl font-semibold break-words">{location || "N/A"}</p>
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsEditingLocation(true)}
-                                    className="opacity-0 group-hover:opacity-100 border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+                                    // --- AND CHANGE IS HERE ---
+                                    className="border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
                                 >
                                     Edit
                                 </Button>

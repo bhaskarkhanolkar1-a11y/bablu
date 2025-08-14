@@ -1,6 +1,6 @@
 // FILE: app/item/ItemPageContent.tsx
 
-"use client"; // Marks this as a Client Component
+"use client";
 
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -20,7 +20,6 @@ export default function ItemPageContent() {
 	const [state, setState] = React.useState<ItemState>({ status: "idle" });
 	const [updating, setUpdating] = React.useState(false);
 
-    // State for editing location and code
     const [isEditingLocation, setIsEditingLocation] = React.useState(false);
     const [newLocation, setNewLocation] = React.useState("");
     const [isEditingCode, setIsEditingCode] = React.useState(false);
@@ -88,4 +87,81 @@ export default function ItemPageContent() {
 						Product not found for code:{" "}
 						<span className="font-mono bg-foreground/10 px-2 py-1 rounded-md">{state.code}</span>
 					</p>
-					<Button onClick
+					<Button onClick={() => router.push("/")}>Try another code</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (state.status !== "ready") {
+		return null;
+	}
+	const { code, quantity, location } = state;
+
+	function applyUpdate(data: { newCode?: string, quantity?: number, location?: string }) {
+		setUpdating(true);
+
+		fetch(`/api/item`, {
+			method: "PATCH",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ code, ...data }),
+		})
+			.then(() => {
+                if (data.newCode) {
+                    router.push(`/item?code=${encodeURIComponent(data.newCode)}`);
+                } else {
+                    const optimisticState = { ...state, ...data } as ItemState;
+		            setState(optimisticState);
+                }
+            })
+			.catch(() => {
+				fetch(`/api/item?code=${encodeURIComponent(code)}`)
+					.then(r => r.json())
+					.then(serverData =>
+						setState({
+							status: "ready",
+							code,
+							quantity: serverData.quantity,
+							location: serverData.location ?? "",
+						})
+					)
+					.catch(() => setState({ status: "not_found", code }));
+			})
+			.finally(() => {
+                setUpdating(false);
+                setIsEditingLocation(false);
+                setIsEditingCode(false);
+            });
+	}
+
+	const dec = () => applyUpdate({ quantity: Math.max(0, quantity - 1) });
+	const inc = () => applyUpdate({ quantity: quantity + 1 });
+    const handleLocationSave = () => applyUpdate({ location: newLocation });
+    const handleCodeSave = () => {
+        if (newCode.trim() && newCode.trim().toUpperCase() !== code) {
+            applyUpdate({ newCode: newCode.trim().toUpperCase() });
+        } else {
+            setIsEditingCode(false);
+        }
+    }
+
+	return (
+		<main className="min-h-screen flex items-center justify-center p-6">
+			<div className="w-full max-w-sm">
+                <div className="flex justify-center mb-8">
+                    <Image
+                        src="/logo.png"
+                        alt="Crompton Greaves Logo"
+                        width={160}
+                        height={48}
+                        priority
+                    />
+                </div>
+                <div className="bg-background border rounded-lg shadow-lg p-8 space-y-8">
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Product Code</p>
+                        {isEditingCode ? (
+                            <div className="mt-2 space-y-2">
+                                <Input
+                                    type="text"
+                                    value={

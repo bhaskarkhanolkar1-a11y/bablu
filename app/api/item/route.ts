@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getItemByCode, updateItemByCode } from "@/lib/googleSheets";
+import { getItemByCode, updateItem } from "@/lib/googleSheets";
 
 export const runtime = "nodejs";
 
@@ -37,18 +37,26 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
 	try {
 		const body = await req.json();
-		const codeRaw: unknown = body?.code;
+		const currentCodeRaw: unknown = body?.code;
+		const newCodeRaw: unknown = body?.newCode;
 		const quantityRaw: unknown = body?.quantity;
         const locationRaw: unknown = body?.location;
 
-		if (typeof codeRaw !== "string" || codeRaw.trim().length === 0) {
+		if (typeof currentCodeRaw !== "string" || currentCodeRaw.trim().length === 0) {
 			return NextResponse.json(
-				{ error: "Body must include a non-empty 'code' string" },
+				{ error: "Body must include the current 'code' string" },
 				{ status: 400 }
 			);
 		}
 
-        const updateData: { quantity?: number; location?: string } = {};
+        const updateData: { newCode?: string; quantity?: number; location?: string } = {};
+
+        if (newCodeRaw !== undefined) {
+            if (typeof newCodeRaw !== 'string' || newCodeRaw.trim().length === 0) {
+                return NextResponse.json({ error: "If provided, 'newCode' must be a non-empty string" }, { status: 400 });
+            }
+            updateData.newCode = newCodeRaw.trim().toUpperCase();
+        }
 
 		if (quantityRaw !== undefined) {
 			if (
@@ -57,7 +65,7 @@ export async function PATCH(req: NextRequest) {
 				Number.isNaN(quantityRaw)
 			) {
 				return NextResponse.json(
-					{ error: "Body must include a finite numeric 'quantity'" },
+					{ error: "If provided, 'quantity' must be a finite number" },
 					{ status: 400 }
 				);
 			}
@@ -76,23 +84,22 @@ export async function PATCH(req: NextRequest) {
 
         if (Object.keys(updateData).length === 0) {
             return NextResponse.json(
-                { error: "Request body must contain 'quantity' or 'location' to update." },
+                { error: "Request body must contain 'newCode', 'quantity', or 'location' to update." },
                 { status: 400 }
             );
         }
 
-		const code = codeRaw.trim().toUpperCase();
-
-		const updated = await updateItemByCode(code, updateData);
+		const currentCode = currentCodeRaw.trim().toUpperCase();
+		const updated = await updateItem(currentCode, updateData);
 
 		if (!updated) {
 			return NextResponse.json(
-				{ error: `No product found with code ${code}` },
+				{ error: `No product found with code ${currentCode}` },
 				{ status: 404 }
 			);
 		}
 
-		return NextResponse.json({ success: true, code, ...updateData });
+		return NextResponse.json({ success: true, ...updateData });
 
 	} catch (error: unknown) {
 		const message =

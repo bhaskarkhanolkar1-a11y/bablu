@@ -1,6 +1,6 @@
 // FILE: app/item/ItemPageContent.tsx
 
-"use client";
+"use client"; // Marks this as a Client Component
 
 import * as React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -20,6 +20,7 @@ export default function ItemPageContent() {
 	const [state, setState] = React.useState<ItemState>({ status: "idle" });
 	const [updating, setUpdating] = React.useState(false);
 
+    // State for editing location and code
     const [isEditingLocation, setIsEditingLocation] = React.useState(false);
     const [newLocation, setNewLocation] = React.useState("");
     const [isEditingCode, setIsEditingCode] = React.useState(false);
@@ -108,13 +109,16 @@ export default function ItemPageContent() {
 		})
 			.then(() => {
                 if (data.newCode) {
+                    // If code was changed, we must redirect to the new URL
                     router.push(`/item?code=${encodeURIComponent(data.newCode)}`);
                 } else {
+                    // Otherwise, just update the state
                     const optimisticState = { ...state, ...data } as ItemState;
 		            setState(optimisticState);
                 }
             })
 			.catch(() => {
+				// On failure, re-fetch the original item's data
 				fetch(`/api/item?code=${encodeURIComponent(code)}`)
 					.then(r => r.json())
 					.then(serverData =>
@@ -148,12 +152,12 @@ export default function ItemPageContent() {
 	return (
 		<main className="min-h-screen flex items-center justify-center p-6">
 			<div className="w-full max-w-sm">
-                <div className="flex justify-center mb-8">
+                <div className="flex justify-center mb-6">
                     <Image
                         src="/logo.png"
                         alt="Crompton Greaves Logo"
-                        width={160}
-                        height={48}
+                        width={128}
+                        height={38}
                         priority
                     />
                 </div>
@@ -164,4 +168,106 @@ export default function ItemPageContent() {
                             <div className="mt-2 space-y-2">
                                 <Input
                                     type="text"
-                                    value={
+                                    value={newCode}
+                                    onChange={(e) => setNewCode(e.target.value)}
+                                    className="text-center text-3xl font-bold font-mono tracking-wider"
+                                    disabled={updating}
+                                />
+                                <div className="flex gap-2 justify-center">
+                                    <Button onClick={handleCodeSave} disabled={updating} size="sm">
+                                        {updating ? 'Saving...' : 'Save'}
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setIsEditingCode(false)} disabled={updating} size="sm">
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                             <div className="group flex items-center justify-center gap-2">
+                                <h1 className="text-3xl font-bold font-mono tracking-wider">{code}</h1>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsEditingCode(true)}
+                                    className="opacity-0 group-hover:opacity-100 border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+                                >
+                                    Edit
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Location</p>
+                        {isEditingLocation ? (
+                            <div className="mt-2 space-y-2">
+                                <Input
+                                    type="text"
+                                    value={newLocation}
+                                    onChange={(e) => setNewLocation(e.target.value)}
+                                    className="text-center text-lg"
+                                    disabled={updating}
+                                />
+                                <div className="flex gap-2 justify-center">
+                                    <Button onClick={handleLocationSave} disabled={updating} size="sm">
+                                        {updating ? 'Saving...' : 'Save'}
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setIsEditingLocation(false)} disabled={updating} size="sm">
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="group flex items-center justify-center gap-2">
+                                <p className="text-2xl font-semibold break-words">{location || "N/A"}</p>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsEditingLocation(true)}
+                                    className="opacity-0 group-hover:opacity-100 border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+                                >
+                                    Edit
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="text-center space-y-4">
+                        <p className="text-sm text-muted-foreground">Quantity</p>
+                        <div className="flex items-center gap-4 justify-center">
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={dec}
+                                disabled={updating || quantity <= 0}
+                                className="w-16 h-16 rounded-full text-2xl"
+                            >
+                                −
+                            </Button>
+                            <div
+                                className={`w-32 text-center text-6xl font-bold tabular-nums transition-opacity ${updating ? 'opacity-50' : 'opacity-100'}`}
+                            >
+                                {quantity}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={inc}
+                                disabled={updating}
+                                className="w-16 h-16 rounded-full text-2xl"
+                            >
+                                +
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+				<div className="mt-6 flex justify-center">
+					<Button variant="ghost" onClick={() => router.push("/")}>
+						← Search for another item
+					</Button>
+				</div>
+			</div>
+		</main>
+	);
+}

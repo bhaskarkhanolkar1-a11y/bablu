@@ -29,27 +29,6 @@ function CameraIcon(props: React.SVGProps<SVGSVGElement>) {
 	);
 }
 
-// A simple X icon for the clear button
-function XIcon(props: React.SVGProps<SVGSVGElement>) {
-	return (
-		<svg
-			{...props}
-			xmlns="http://www.w3.org/2000/svg"
-			width="24"
-			height="24"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="2"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-		>
-			<path d="M18 6 6 18" />
-			<path d="m6 6 12 12" />
-		</svg>
-	);
-}
-
 
 export default function HomePage() {
 	const router = useRouter();
@@ -161,22 +140,8 @@ export default function HomePage() {
 							aria-expanded={open}
 							aria-controls="code-suggestions"
 							role="combobox"
-							className="h-12 text-lg pr-10" // Added padding to make space for the button
+							className="h-12 text-lg"
 						/>
-                        {/* --- NEW CLEAR BUTTON --- */}
-                        {code && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-                                onClick={() => setCode("")}
-                                aria-label="Clear search"
-                            >
-                                <XIcon className="h-4 w-4" />
-                            </Button>
-                        )}
-                        {/* --- END OF NEW SECTION --- */}
-
 						{open && (
 							<div
 								id="code-suggestions"

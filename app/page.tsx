@@ -23,6 +23,7 @@ export default function HomePage() {
 		router.push(`/item?code=${encodeURIComponent(value)}`);
 	}
 
+	// Debounced fetch of suggestions after 2+ characters
 	React.useEffect(() => {
 		const q = code.trim();
 		if (q.length < 2) {
@@ -35,7 +36,11 @@ export default function HomePage() {
 		const id = setTimeout(() => {
 			fetch(`/api/items?q=${encodeURIComponent(q)}&limit=10`)
 				.then(async res => {
-					if (!res.ok) throw new Error(await res.text());
+					if (!res.ok) {
+                        // Throw an error if the response is not successful
+                        const errorText = await res.text();
+                        throw new Error(`API Error: ${res.status} - ${errorText}`);
+                    }
 					return res.json();
 				})
 				.then((data: Array<{ code: string; quantity: number }>) => {
@@ -43,7 +48,9 @@ export default function HomePage() {
 					setOpen(true);
 					setActiveIndex(data.length ? 0 : -1);
 				})
-				.catch(() => {
+				.catch((err) => {
+                    // --- FIX: Log the error to the console for debugging ---
+					console.error("Failed to fetch search suggestions:", err);
 					setSuggestions([]);
 					setOpen(false);
 					setActiveIndex(-1);
@@ -163,30 +170,22 @@ export default function HomePage() {
 					</Button>
 				</div>
 
-                {/* --- NEW SECTION ADDED HERE --- */}
                 <div className="mt-12 text-center text-muted-foreground">
                     <p className="text-sm">
                         Powered by students of GEC
                     </p>
-                    {/* --- LOGO PLACEHOLDER --- */}
-                    {/* 1. Upload your college logo to the 'public' folder.
-                        2. Rename the file to something simple (e.g., 'gec-logo.png').
-                        3. Update the 'src' below to match the filename.
-                    */}
                     <div className="flex justify-center my-4">
-                        <Image 
-                            src="/gec-logo.png" // <-- UPDATE THIS FILENAME
+                        <Image
+                            src="/gec-logo.png"
                             alt="GEC College Logo"
-                            width={80} // Adjust size as needed
-                            height={80} // Adjust size as needed
+                            width={80}
+                            height={80}
                         />
                     </div>
                     <p className="text-xs">
                         Bhaskar Khanolkar, Tapi Tajung, Ankush, Loanwang
                     </p>
                 </div>
-                {/* --- END OF NEW SECTION --- */}
-
 			</div>
 		</main>
 	);

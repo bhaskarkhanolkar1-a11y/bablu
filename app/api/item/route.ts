@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getItemByCode, setQuantityByCode } from "@/lib/googleSheets";
+import { getItemByCode, updateItemByCode } from "@/lib/googleSheets";
 
 export const runtime = "nodejs";
 
@@ -39,33 +39,61 @@ export async function PATCH(req: NextRequest) {
 		const body = await req.json();
 		const codeRaw: unknown = body?.code;
 		const quantityRaw: unknown = body?.quantity;
+        const locationRaw: unknown = body?.location;
+
 		if (typeof codeRaw !== "string" || codeRaw.trim().length === 0) {
 			return NextResponse.json(
 				{ error: "Body must include a non-empty 'code' string" },
 				{ status: 400 }
 			);
 		}
-		if (
-			typeof quantityRaw !== "number" ||
-			!Number.isFinite(quantityRaw) ||
-			Number.isNaN(quantityRaw)
-		) {
-			return NextResponse.json(
-				{ error: "Body must include a finite numeric 'quantity'" },
-				{ status: 400 }
-			);
-		}
-		const code = codeRaw.trim().toUpperCase();
-		const newQuantity = Math.max(0, Math.floor(quantityRaw));
 
-		const updated = await setQuantityByCode(code, newQuantity);
+        const updateData: { quantity?: number; location?: string } = {};
+
+		if (quantityRaw !== undefined) {
+			if (
+				typeof quantityRaw !== "number" ||
+				!Number.isFinite(quantityRaw) ||
+				Number.isNaN(quantityRaw)
+			) {
+				return NextResponse.json(
+					{ error: "Body must include a finite numeric 'quantity'" },
+					{ status: 400 }
+				);
+			}
+			updateData.quantity = Math.max(0, Math.floor(quantityRaw));
+		}
+
+        if (locationRaw !== undefined) {
+            if (typeof locationRaw !== 'string') {
+                return NextResponse.json(
+                    { error: "If provided, 'location' must be a string" },
+                    { status: 400 }
+                );
+            }
+            updateData.location = locationRaw.trim();
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return NextResponse.json(
+                { error: "Request body must contain 'quantity' or 'location' to update." },
+                { status: 400 }
+            );
+        }
+
+		const code = codeRaw.trim().toUpperCase();
+
+		const updated = await updateItemByCode(code, updateData);
+
 		if (!updated) {
 			return NextResponse.json(
 				{ error: `No product found with code ${code}` },
 				{ status: 404 }
 			);
 		}
-		return NextResponse.json({ success: true, code, quantity: newQuantity });
+
+		return NextResponse.json({ success: true, code, ...updateData });
+
 	} catch (error: unknown) {
 		const message =
 			error instanceof Error ? error.message : "Unknown error occurred";

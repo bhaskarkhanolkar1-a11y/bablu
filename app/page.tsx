@@ -23,7 +23,6 @@ export default function HomePage() {
 		router.push(`/item?code=${encodeURIComponent(value)}`);
 	}
 
-	// Debounced fetch of suggestions after 2+ characters
 	React.useEffect(() => {
 		const q = code.trim();
 		if (q.length < 2) {
@@ -37,7 +36,6 @@ export default function HomePage() {
 			fetch(`/api/items?q=${encodeURIComponent(q)}&limit=10`)
 				.then(async res => {
 					if (!res.ok) {
-                        // Throw an error if the response is not successful
                         const errorText = await res.text();
                         throw new Error(`API Error: ${res.status} - ${errorText}`);
                     }
@@ -49,7 +47,6 @@ export default function HomePage() {
 					setActiveIndex(data.length ? 0 : -1);
 				})
 				.catch((err) => {
-                    // --- FIX: Log the error to the console for debugging ---
 					console.error("Failed to fetch search suggestions:", err);
 					setSuggestions([]);
 					setOpen(false);
@@ -105,88 +102,4 @@ export default function HomePage() {
                     <h1 className="text-3xl font-bold tracking-tight">Inventory Lookup</h1>
                     <p className="text-muted-foreground mt-2">
                         Enter a product code to check its quantity and location.
-                    </p>
-                </div>
-				<div className="space-y-4">
-					<div className="relative">
-						<Input
-							placeholder="Enter product code..."
-							value={code}
-							onChange={e => setCode(e.target.value)}
-							onKeyDown={onKeyDown}
-							aria-autocomplete="list"
-							aria-expanded={open}
-							aria-controls="code-suggestions"
-							role="combobox"
-							className="h-12 text-lg"
-						/>
-						{open && (
-							<div
-								id="code-suggestions"
-								role="listbox"
-								className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-lg max-h-60 overflow-y-auto"
-							>
-								{loading && (
-									<div className="px-3 py-2 text-sm text-muted-foreground">
-										Searching...
-									</div>
-								)}
-								{!loading && suggestions.length === 0 && (
-									<div className="px-3 py-2 text-sm text-muted-foreground">
-										No matches found.
-									</div>
-								)}
-								{!loading &&
-									suggestions.map((s, idx) => (
-										<button
-											key={s.code + idx}
-											role="option"
-											aria-selected={idx === activeIndex}
-											onMouseDown={e => {
-												e.preventDefault();
-												setCode(s.code);
-												setOpen(false);
-												router.push(
-													`/item?code=${encodeURIComponent(s.code.toUpperCase())}`
-												);
-											}}
-											className={`flex w-full items-center justify-between px-3 py-2 text-sm text-left hover:bg-foreground/5 dark:hover:bg-foreground/10 ${
-												idx === activeIndex
-													? "bg-foreground/5 dark:bg-foreground/10"
-													: ""
-											}`}
-										>
-											<span className="font-mono">{s.code}</span>
-											<span className="text-xs text-muted-foreground">
-												{s.quantity} in stock
-											</span>
-										</button>
-									))}
-							</div>
-						)}
-					</div>
-					<Button onClick={submit} className="w-full h-11 text-base">
-						Search
-					</Button>
-				</div>
-
-                <div className="mt-12 text-center text-muted-foreground">
-                    <p className="text-sm">
-                        Powered by students of GEC
-                    </p>
-                    <div className="flex justify-center my-4">
-                        <Image
-                            src="/gec-logo.png"
-                            alt="GEC College Logo"
-                            width={80}
-                            height={80}
-                        />
-                    </div>
-                    <p className="text-xs">
-                        Bhaskar Khanolkar, Tapi Tajung, Ankush, Loanwang
-                    </p>
-                </div>
-			</div>
-		</main>
-	);
-}
+                    </

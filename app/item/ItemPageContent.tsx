@@ -174,7 +174,7 @@ export default function ItemPageContent() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setIsEditingLocation(true)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="opacity-40 group-hover:opacity-100 transition-opacity"
                                 >
                                     Edit
                                 </Button>

@@ -35,10 +35,7 @@ export default function HomePage() {
 		const id = setTimeout(() => {
 			fetch(`/api/items?q=${encodeURIComponent(q)}&limit=10`)
 				.then(async res => {
-					if (!res.ok) {
-                        const errorText = await res.text();
-                        throw new Error(`API Error: ${res.status} - ${errorText}`);
-                    }
+					if (!res.ok) throw new Error(await res.text());
 					return res.json();
 				})
 				.then((data: Array<{ code: string; quantity: number }>) => {
@@ -46,8 +43,7 @@ export default function HomePage() {
 					setOpen(true);
 					setActiveIndex(data.length ? 0 : -1);
 				})
-				.catch((err) => {
-					console.error("Failed to fetch search suggestions:", err);
+				.catch(() => {
 					setSuggestions([]);
 					setOpen(false);
 					setActiveIndex(-1);
@@ -104,7 +100,7 @@ export default function HomePage() {
                         Enter a product code to check its quantity and location.
                     </p>
                 </div>
-				<div className="space-y-4 relative z-20"> {/* <-- FIX IS HERE */}
+				<div className="space-y-4">
 					<div className="relative">
 						<Input
 							placeholder="Enter product code..."
@@ -162,30 +158,34 @@ export default function HomePage() {
 							</div>
 						)}
 					</div>
-					<Button
-                        onClick={submit}
-                        className="w-full h-11 text-base"
-                    >
+					<Button onClick={submit} className="w-full h-11 text-base">
 						Search
 					</Button>
 				</div>
 
+                {/* --- NEW SECTION ADDED HERE --- */}
                 <div className="mt-12 text-center text-muted-foreground">
                     <p className="text-sm">
                         Powered by students of GEC
                     </p>
+                    {/* --- LOGO PLACEHOLDER --- */}
+                    {/* 1. Upload your college logo to the 'public' folder.
+                        2. Rename the file to something simple (e.g., 'gec-logo.png').
+                        3. Update the 'src' below to match the filename.
+                    */}
                     <div className="flex justify-center my-4">
-                        <Image
-                            src="/gec-logo.png"
+                        <Image 
+                            src="/gec-logo.png" // <-- UPDATE THIS FILENAME
                             alt="GEC College Logo"
-                            width={80}
-                            height={80}
+                            width={80} // Adjust size as needed
+                            height={80} // Adjust size as needed
                         />
                     </div>
                     <p className="text-xs">
                         Bhaskar Khanolkar, Tapi Tajung, Ankush, Loanwang
                     </p>
                 </div>
+                {/* --- END OF NEW SECTION --- */}
 
 			</div>
 		</main>

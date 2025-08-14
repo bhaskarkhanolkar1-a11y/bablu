@@ -123,9 +123,9 @@ export default function ItemPageContent() {
 		<main className="min-h-screen flex items-center justify-center p-6">
 			<div className="w-full max-w-sm">
                 <div className="flex justify-center mb-6">
-                    <Image 
-                        src="/logo.png" 
-                        alt="Crompton Greaves Logo" 
+                    <Image
+                        src="/logo.png"
+                        alt="Crompton Greaves Logo"
                         width={128}
                         height={38}
                         priority
@@ -136,7 +136,7 @@ export default function ItemPageContent() {
                         <p className="text-sm text-muted-foreground">Product Code</p>
                         <h1 className="text-3xl font-bold font-mono tracking-wider">{code}</h1>
                     </div>
-                    
+
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Location</p>
                         <p className="text-2xl font-semibold break-words">{location || "N/A"}</p>

@@ -31,11 +31,63 @@ function getSheetsClient(): SheetsClient {
 const SHEET_ID = () => getEnv("GOOGLE_SHEETS_ID")!;
 const SHEET_TAB = () => getEnv("GOOGLE_SHEETS_TAB", false) || "Sheet1";
 
+// --- NEW: Function to add a new item ---
+export async function addItem(item: {
+	name: string;
+	quantity: number;
+	location: string;
+}): Promise<void> {
+	const sheets = getSheetsClient();
+	const range = `${SHEET_TAB()}!A:C`;
+	await sheets.spreadsheets.values.append({
+		spreadsheetId: SHEET_ID(),
+		range,
+		valueInputOption: "RAW",
+		requestBody: {
+			values: [[item.name, item.quantity, item.location]],
+		},
+	});
+}
+
+// --- NEW: Function to delete an item ---
+export async function deleteItem(code: string): Promise<boolean> {
+	const sheets = getSheetsClient();
+	const range = `${SHEET_TAB()}!A:A`; // Only need to search column A
+	const resp = await sheets.spreadsheets.values.get({
+		spreadsheetId: SHEET_ID(),
+		range,
+		majorDimension: "ROWS",
+	});
+
+	const rows = resp.data.values || [];
+	let targetRowIndex: number | null = null;
+	for (let i = 0; i < rows.length; i += 1) {
+		const rowCode = String(rows[i]?.[0] ?? "").trim();
+		if (rowCode.toLowerCase() === code.toLowerCase()) {
+			targetRowIndex = i;
+			break;
+		}
+	}
+
+	if (targetRowIndex === null) {
+		return false; // Item not found
+	}
+
+	const sheetRowNumber = targetRowIndex + 1;
+	// This will clear the row's content
+	await sheets.spreadsheets.values.clear({
+		spreadsheetId: SHEET_ID(),
+		range: `${SHEET_TAB()}!A${sheetRowNumber}:C${sheetRowNumber}`,
+	});
+
+	return true;
+}
+
 export async function getItemByCode(
 	code: string
 ): Promise<{ quantity: number; location: string } | null> {
 	const sheets = getSheetsClient();
-	const range = `${SHEET_TAB()}!A:C`; 
+	const range = `${SHEET_TAB()}!A:C`;
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
@@ -47,8 +99,8 @@ export async function getItemByCode(
 	for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
 		const row = rows[rowIndex];
 		if (!row || row.length === 0) continue;
-		const rowCode = String(row[0] ?? "").trim(); // No more .toUpperCase() here to match names
-		if (rowCode.toLowerCase() === code.toLowerCase()) { // Case-insensitive match
+		const rowCode = String(row[0] ?? "").trim();
+		if (rowCode.toLowerCase() === code.toLowerCase()) {
 			const qtyStr = String(row[1] ?? "").trim();
 			const qty = Number.parseInt(qtyStr, 10);
 			const quantity = Number.isFinite(qty) ? qty : 0;
@@ -63,7 +115,6 @@ export async function updateItem(
 	currentCode: string,
 	updateData: { newCode?: string; quantity?: number; location?: string }
 ): Promise<boolean> {
-	// This function remains unchanged
 	const sheets = getSheetsClient();
 	const range = `${SHEET_TAB()}!A:C`;
 	const resp = await sheets.spreadsheets.values.get({
@@ -109,7 +160,6 @@ export async function getAllItemsForSearch(): Promise<
 	Array<{ code: string; quantity: number; name: string }>
 > {
 	const sheets = getSheetsClient();
-	// We only need columns A (Name/Code) and B (Quantity)
 	const range = `${SHEET_TAB()}!A:B`;
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
@@ -120,7 +170,6 @@ export async function getAllItemsForSearch(): Promise<
 	const results: Array<{ code: string; quantity: number; name: string }> = [];
 	for (let i = 0; i < rows.length; i += 1) {
 		const row = rows[i] ?? [];
-		// The value in Column A is both the 'code' and the 'name'
 		const codeAndName = String(row[0] ?? "").trim();
 		if (!codeAndName) continue;
 		

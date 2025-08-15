@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
-import { QRCodeModal } from "@/components/QRCodeModal"; // <-- ADD THIS IMPORT
+import { QRCodeModal } from "@/components/QRCodeModal";
 
 type ItemState =
 	| { status: "idle" | "loading" }
@@ -23,7 +23,6 @@ export default function ItemPageContent() {
 	const [updating, setUpdating] = React.useState(false);
 	const [isEditingLocation, setIsEditingLocation] = React.useState(false);
 	const [newLocation, setNewLocation] = React.useState("");
-	// NEW: State to control the QR code modal
 	const [isQrModalOpen, setIsQrModalOpen] = React.useState(false);
 
 	React.useEffect(() => {
@@ -59,7 +58,38 @@ export default function ItemPageContent() {
 		};
 	}, [codeParam]);
 
-	// ... (The next three functions: if (!codeParam), if (loading), if (not_found) are unchanged)
+	if (!codeParam) {
+		return (
+			<div className="min-h-screen flex items-center justify-center p-6 text-center">
+				<div className="space-y-4">
+					<p className="text-lg">No item code provided.</p>
+					<Button onClick={() => router.push("/")}>Back to Search</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (state.status === "loading" || state.status === "idle") {
+		return (
+			<div className="min-h-screen flex items-center justify-center p-6">
+				<p className="animate-pulse">Loading item...</p>
+			</div>
+		);
+	}
+
+	if (state.status === "not_found") {
+		return (
+			<div className="min-h-screen flex items-center justify-center p-6 text-center">
+				<div className="space-y-4">
+					<p className="text-lg">
+						Product not found for code:{" "}
+						<span className="font-mono bg-foreground/10 px-2 py-1 rounded-md">{state.code}</span>
+					</p>
+					<Button onClick={() => router.push("/")}>Try another code</Button>
+				</div>
+			</div>
+		);
+	}
 
 	if (state.status !== "ready") {
 		return null;
@@ -118,11 +148,75 @@ export default function ItemPageContent() {
                         <p className="text-sm text-muted-foreground">Product Code</p>
                         <h1 className="text-3xl font-bold font-mono tracking-wider mt-2 break-words">{code}</h1>
                     </div>
-                    {/* ... (Location and Quantity sections are unchanged) */}
+                    
+                    {/* THIS SECTION IS NOW RESTORED */}
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Location</p>
+                        {isEditingLocation ? (
+                            <div className="mt-2 space-y-2">
+                                <Input
+                                    type="text"
+                                    value={newLocation}
+                                    onChange={(e) => setNewLocation(e.target.value)}
+                                    className="text-center text-lg"
+                                    disabled={updating}
+                                />
+                                <div className="flex gap-2 justify-center">
+                                    <Button onClick={handleLocationSave} disabled={updating} size="sm">
+                                        {updating ? 'Saving...' : 'Save'}
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setIsEditingLocation(false)} disabled={updating} size="sm">
+                                        Cancel
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center gap-2">
+                                <p className="text-2xl font-semibold break-words">{location || "N/A"}</p>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsEditingLocation(true)}
+                                    className="border border-transparent hover:border-gray-300 dark:hover:border-gray-700 transition-all"
+                                >
+                                    Edit
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* THIS SECTION IS NOW RESTORED */}
+                    <div className="text-center space-y-4">
+                        <p className="text-sm text-muted-foreground">Quantity</p>
+                        <div className="flex items-center gap-4 justify-center">
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={dec}
+                                disabled={updating || quantity <= 0}
+                                className="w-16 h-16 rounded-full text-2xl"
+                            >
+                                −
+                            </Button>
+                            <div
+                                className={`w-32 text-center text-6xl font-bold tabular-nums transition-opacity ${updating ? 'opacity-50' : 'opacity-100'}`}
+                            >
+                                {quantity}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={inc}
+                                disabled={updating}
+                                className="w-16 h-16 rounded-full text-2xl"
+                            >
+                                +
+                            </Button>
+                        </div>
+                    </div>
                 </div>
 
 				<div className="mt-6 flex flex-col items-center gap-2">
-					{/* NEW: Button to show the QR code */}
 					<Button onClick={() => setIsQrModalOpen(true)}>
 						Show QR Code
 					</Button>
@@ -132,7 +226,6 @@ export default function ItemPageContent() {
 				</div>
 			</div>
 
-			{/* NEW: Render the modal when isQrModalOpen is true */}
 			{isQrModalOpen && (
 				<QRCodeModal
 					itemCode={code}

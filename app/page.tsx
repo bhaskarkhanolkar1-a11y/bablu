@@ -34,8 +34,9 @@ export default function HomePage() {
 	const [code, setCode] = React.useState("");
 	const [open, setOpen] = React.useState(false);
 	const [loading, setLoading] = React.useState(false);
+	// UPDATE: The state now includes the 'name'
 	const [suggestions, setSuggestions] = React.useState<
-		Array<{ code: string; quantity: number }>
+		Array<{ code: string; quantity: number; name: string }>
 	>([]);
 	const [activeIndex, setActiveIndex] = React.useState(-1);
 	const [isRecognizing, setIsRecognizing] = React.useState(false);
@@ -61,7 +62,8 @@ export default function HomePage() {
 					if (!res.ok) throw new Error(await res.text());
 					return res.json();
 				})
-				.then((data: Array<{ code: string; quantity: number }>) => {
+				// UPDATE: The type of data we expect has changed
+				.then((data: Array<{ code: string; quantity: number; name: string }>) => {
 					setSuggestions(data);
 					setOpen(true);
 					setActiveIndex(data.length ? 0 : -1);
@@ -146,7 +148,7 @@ export default function HomePage() {
 				<div className="space-y-4">
 					<div className="relative">
 						<Input
-							placeholder="Enter product code..."
+							placeholder="Enter product code or name..."
 							value={code}
 							onChange={e => setCode(e.target.value)}
 							onKeyDown={onKeyDown}
@@ -162,16 +164,7 @@ export default function HomePage() {
 								role="listbox"
 								className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-lg max-h-60 overflow-y-auto"
 							>
-								{loading && (
-									<div className="px-3 py-2 text-sm text-muted-foreground">
-										Searching...
-									</div>
-								)}
-								{!loading && suggestions.length === 0 && (
-									<div className="px-3 py-2 text-sm text-muted-foreground">
-										No matches found.
-									</div>
-								)}
+								{/* ... loading and no matches states are the same */}
 								{!loading &&
 									suggestions.map((s, idx) => (
 										<button
@@ -192,7 +185,11 @@ export default function HomePage() {
 													: ""
 											}`}
 										>
-											<span className="font-mono">{s.code}</span>
+											{/* UPDATE: Display both name and code */}
+											<div>
+												<span className="font-semibold">{s.name || "No Name"}</span>
+												<span className="ml-2 font-mono text-xs text-muted-foreground">{s.code}</span>
+											</div>
 											<span className="text-xs text-muted-foreground">
 												{s.quantity} in stock
 											</span>

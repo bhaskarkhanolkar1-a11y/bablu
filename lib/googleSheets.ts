@@ -1,3 +1,5 @@
+// FILE: lib/googleSheets.ts
+
 import { google } from "googleapis";
 
 type SheetsClient = ReturnType<typeof google.sheets>;
@@ -33,7 +35,8 @@ export async function getItemByCode(
 	code: string
 ): Promise<{ quantity: number; location: string } | null> {
 	const sheets = getSheetsClient();
-	const range = `${SHEET_TAB()}!A:C`; // Read columns A, B, and C
+	// We now read up to column D to get the name if needed, though this function doesn't use it.
+	const range = `${SHEET_TAB()}!A:D`;
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
@@ -53,17 +56,18 @@ export async function getItemByCode(
 			const qty = Number.parseInt(qtyStr, 10);
 			const quantity = Number.isFinite(qty) ? qty : 0;
 			const location = String(row[2] ?? "").trim();
+			// The name would be in row[3], but this function doesn't need to return it.
 			return { quantity, location };
 		}
 	}
 	return null;
 }
 
-// NEW: A more robust update function
 export async function updateItem(
 	currentCode: string,
 	updateData: { newCode?: string; quantity?: number; location?: string }
 ): Promise<boolean> {
+	// This function remains unchanged as it doesn't interact with the name
 	const sheets = getSheetsClient();
 	const range = `${SHEET_TAB()}!A:C`;
 	const resp = await sheets.spreadsheets.values.get({
@@ -86,13 +90,12 @@ export async function updateItem(
 	}
 
 	if (targetRowIndex === null) {
-		return false; // Item not found
+		return false;
 	}
 
 	const sheetRowNumber = targetRowIndex + 1;
 	const existingRow = rows[targetRowIndex];
 
-	// Prepare the new values, using existing ones as fallbacks
 	const code = updateData.newCode ?? existingRow[0];
 	const quantity = updateData.quantity ?? existingRow[1];
 	const location = updateData.location ?? existingRow[2];
@@ -108,28 +111,36 @@ export async function updateItem(
 	return true;
 }
 
-
-export async function getAllCodeQuantity(): Promise<
-	Array<{ code: string; quantity: number }>
+// RENAMED and UPDATED to fetch names for searching
+export async function getAllItemsForSearch(): Promise<
+	Array<{ code: string; quantity: number; name: string }>
 > {
 	const sheets = getSheetsClient();
-	const range = `${SHEET_TAB()}!A:B`;
+	// IMPORTANT: We now read columns A, B, and D.
+	// A = Code, B = Quantity, D = Name
+	const range = `${SHEET_TAB()}!A:D`;
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
 		majorDimension: "ROWS",
 	});
 	const rows = resp.data.values || [];
-	const results: Array<{ code: string; quantity: number }> = [];
+	const results: Array<{ code: string; quantity: number; name: string }> = [];
 	for (let i = 0; i < rows.length; i += 1) {
 		const row = rows[i] ?? [];
 		const codeRaw = String(row[0] ?? "").trim();
 		if (!codeRaw) continue;
+		
 		const qtyStr = String(row[1] ?? "").trim();
 		const qtyParsed = Number.parseInt(qtyStr, 10);
+		// Skip header row if quantity is not a number
 		if (i === 0 && !Number.isFinite(qtyParsed)) continue;
+		
 		const quantity = Number.isFinite(qtyParsed) ? qtyParsed : 0;
-		results.push({ code: codeRaw, quantity });
+		// Get the product name from the 4th column (index 3)
+		const name = String(row[3] ?? "").trim();
+		
+		results.push({ code: codeRaw, quantity, name });
 	}
 	return results;
 }

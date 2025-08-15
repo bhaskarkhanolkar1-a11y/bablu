@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton"; // <-- ADD THIS LINE
 
 type ItemState =
 	| { status: "idle" | "loading" }
@@ -134,6 +135,7 @@ export default function ItemPageContent() {
 
 	return (
 		<main className="min-h-screen flex items-center justify-center p-6">
+			<ThemeToggleButton /> {/* <-- ADD THIS LINE */}
 			<div className="w-full max-w-sm">
                 <div className="flex justify-center mb-6">
                     <Image

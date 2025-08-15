@@ -126,32 +126,6 @@ export default function ItemPageContent() {
             });
 	}
 
-	async function handleDelete() {
-		const isConfirmed = window.confirm(
-			`Are you sure you want to delete this item?\n\n"${code}"\n\nThis action cannot be undone.`
-		);
-
-		if (isConfirmed) {
-			setUpdating(true);
-			try {
-				const response = await fetch("/api/item", {
-					method: "DELETE",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ code: code }),
-				});
-
-				if (!response.ok) {
-					throw new Error("Failed to delete item.");
-				}
-				router.push("/");
-			} catch (error) {
-				console.error(error);
-				alert("An error occurred while deleting the item.");
-				setUpdating(false);
-			}
-		}
-	}
-
 	const dec = () => applyUpdate({ quantity: Math.max(0, quantity - 1) });
 	const inc = () => applyUpdate({ quantity: quantity + 1 });
     const handleLocationSave = () => applyUpdate({ location: newLocation });
@@ -247,16 +221,6 @@ export default function ItemPageContent() {
 					<Button variant="ghost" onClick={() => router.push("/")}>
 						← Search for another item
 					</Button>
-					<div className="w-full border-t mt-4 pt-4">
-						<Button
-							variant="destructive"
-							onClick={handleDelete}
-							disabled={updating}
-							className="w-full"
-						>
-							{updating ? "Deleting..." : "Delete Item"}
-						</Button>
-					</div>
 				</div>
 			</div>
 

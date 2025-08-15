@@ -35,8 +35,7 @@ export async function getItemByCode(
 	code: string
 ): Promise<{ quantity: number; location: string } | null> {
 	const sheets = getSheetsClient();
-	// We now read up to column D to get the name if needed, though this function doesn't use it.
-	const range = `${SHEET_TAB()}!A:D`;
+	const range = `${SHEET_TAB()}!A:C`; 
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
@@ -48,15 +47,12 @@ export async function getItemByCode(
 	for (let rowIndex = 0; rowIndex < rows.length; rowIndex += 1) {
 		const row = rows[rowIndex];
 		if (!row || row.length === 0) continue;
-		const rowCode = String(row[0] ?? "")
-			.trim()
-			.toUpperCase();
-		if (rowCode === code) {
+		const rowCode = String(row[0] ?? "").trim(); // No more .toUpperCase() here to match names
+		if (rowCode.toLowerCase() === code.toLowerCase()) { // Case-insensitive match
 			const qtyStr = String(row[1] ?? "").trim();
 			const qty = Number.parseInt(qtyStr, 10);
 			const quantity = Number.isFinite(qty) ? qty : 0;
 			const location = String(row[2] ?? "").trim();
-			// The name would be in row[3], but this function doesn't need to return it.
 			return { quantity, location };
 		}
 	}
@@ -67,7 +63,7 @@ export async function updateItem(
 	currentCode: string,
 	updateData: { newCode?: string; quantity?: number; location?: string }
 ): Promise<boolean> {
-	// This function remains unchanged as it doesn't interact with the name
+	// This function remains unchanged
 	const sheets = getSheetsClient();
 	const range = `${SHEET_TAB()}!A:C`;
 	const resp = await sheets.spreadsheets.values.get({
@@ -80,10 +76,8 @@ export async function updateItem(
 	let targetRowIndex: number | null = null;
 	for (let i = 0; i < rows.length; i += 1) {
 		const row = rows[i];
-		const rowCode = String(row?.[0] ?? "")
-			.trim()
-			.toUpperCase();
-		if (rowCode === currentCode) {
+		const rowCode = String(row?.[0] ?? "").trim();
+		if (rowCode.toLowerCase() === currentCode.toLowerCase()) {
 			targetRowIndex = i;
 			break;
 		}
@@ -111,14 +105,12 @@ export async function updateItem(
 	return true;
 }
 
-// RENAMED and UPDATED to fetch names for searching
 export async function getAllItemsForSearch(): Promise<
 	Array<{ code: string; quantity: number; name: string }>
 > {
 	const sheets = getSheetsClient();
-	// IMPORTANT: We now read columns A, B, and D.
-	// A = Code, B = Quantity, D = Name
-	const range = `${SHEET_TAB()}!A:D`;
+	// We only need columns A (Name/Code) and B (Quantity)
+	const range = `${SHEET_TAB()}!A:B`;
 	const resp = await sheets.spreadsheets.values.get({
 		spreadsheetId: SHEET_ID(),
 		range,
@@ -128,19 +120,17 @@ export async function getAllItemsForSearch(): Promise<
 	const results: Array<{ code: string; quantity: number; name: string }> = [];
 	for (let i = 0; i < rows.length; i += 1) {
 		const row = rows[i] ?? [];
-		const codeRaw = String(row[0] ?? "").trim();
-		if (!codeRaw) continue;
+		// The value in Column A is both the 'code' and the 'name'
+		const codeAndName = String(row[0] ?? "").trim();
+		if (!codeAndName) continue;
 		
 		const qtyStr = String(row[1] ?? "").trim();
 		const qtyParsed = Number.parseInt(qtyStr, 10);
-		// Skip header row if quantity is not a number
 		if (i === 0 && !Number.isFinite(qtyParsed)) continue;
 		
 		const quantity = Number.isFinite(qtyParsed) ? qtyParsed : 0;
-		// Get the product name from the 4th column (index 3)
-		const name = String(row[3] ?? "").trim();
 		
-		results.push({ code: codeRaw, quantity, name });
+		results.push({ code: codeAndName, quantity, name: codeAndName });
 	}
 	return results;
 }

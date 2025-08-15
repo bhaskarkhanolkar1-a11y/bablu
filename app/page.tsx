@@ -204,20 +204,9 @@ export default function HomePage() {
                     </div>
 				</div>
 
-                <div className="mt-12 text-center text-muted-foreground">
-                    <p className="text-sm">
-                        Powered by students of GEC
-                    </p>
-                    <div className="flex justify-center my-4">
-                        <Image 
-                            src="/gec-logo.png"
-                            alt="GEC College Logo"
-                            width={80}
-                            height={80}
-                        />
-                    </div>
+               
                     <p className="text-xs">
-                        Bhaskar Khanolkar, Tapi Tajung, Ankush, Loanwang
+                        Bhaskar Khanolkar, Tapi Tajung, Ankush Naik, Loanwang hakun
                     </p>
                 </div>
 			</div>

@@ -45,11 +45,15 @@ export default function AddItemPage() {
 				throw new Error(errorData.error || "Failed to add item");
 			}
 
-			// On success, redirect to the home page
 			router.push("/");
 			
-		} catch (err: any) {
-			setError(err.message);
+		} catch (err) {
+			// This is the corrected part. We now check if 'err' is an actual Error.
+			if (err instanceof Error) {
+				setError(err.message);
+			} else {
+				setError("An unexpected error occurred.");
+			}
 		} finally {
 			setIsSubmitting(false);
 		}

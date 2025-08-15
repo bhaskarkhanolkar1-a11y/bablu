@@ -28,7 +28,7 @@ function CameraIcon(props: React.SVGProps<SVGSVGElement>) {
 		</svg>
 	);
 }
-// NEW: Plus icon for the add button
+// Plus icon for the add button
 function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
 	return (
 		<svg
@@ -36,7 +36,7 @@ function PlusIcon(props: React.SVGProps<SVGSVGElement>) {
 			xmlns="http://www.w3.org/2000/svg"
 			width="24"
 			height="24"
-			viewBox="0 0 24 24"
+			viewBox="0 0 24"
 			fill="none"
 			stroke="currentColor"
 			strokeWidth="2"
@@ -183,7 +183,44 @@ export default function HomePage() {
 								role="listbox"
 								className="absolute z-10 mt-2 w-full rounded-md border bg-background shadow-lg max-h-60 overflow-y-auto"
 							>
-								{/* ... (suggestions map is unchanged) */}
+								{/* THIS IS THE RESTORED SECTION */}
+								{loading && (
+									<div className="px-3 py-2 text-sm text-muted-foreground">
+										Searching...
+									</div>
+								)}
+								{!loading && suggestions.length === 0 && (
+									<div className="px-3 py-2 text-sm text-muted-foreground">
+										No matches found.
+									</div>
+								)}
+								{/* THIS IS THE END OF THE RESTORED SECTION */}
+								{!loading &&
+									suggestions.map((s, idx) => (
+										<button
+											key={s.code + idx}
+											role="option"
+											aria-selected={idx === activeIndex}
+											onMouseDown={e => {
+												e.preventDefault();
+												setCode(s.code);
+												setOpen(false);
+												router.push(
+													`/item?code=${encodeURIComponent(s.code)}`
+												);
+											}}
+											className={`flex w-full items-center justify-between px-3 py-2 text-sm text-left hover:bg-foreground/5 dark:hover:bg-foreground/10 ${
+												idx === activeIndex
+													? "bg-foreground/5 dark:bg-foreground/10"
+													: ""
+											}`}
+										>
+											<span className="font-semibold">{s.name}</span>
+											<span className="text-xs text-muted-foreground">
+												{s.quantity} in stock
+											</span>
+										</button>
+									))}
 							</div>
 						)}
 					</div>
@@ -204,7 +241,6 @@ export default function HomePage() {
 								<CameraIcon className="h-5 w-5"/>
 							)}
                         </Button>
-						{/* NEW: Add Item Button */}
 						<Button
 							variant="outline"
 							onClick={() => router.push('/add-item')}

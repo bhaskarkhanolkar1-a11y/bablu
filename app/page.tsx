@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { ThemeToggleButton } from "@/components/ThemeToggleButton"; // <-- ADD THIS LINE
 
 // A simple camera icon component
 function CameraIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -114,6 +115,7 @@ export default function HomePage() {
 
 	return (
 		<main className="min-h-screen flex items-center justify-center p-6">
+			<ThemeToggleButton /> {/* <-- ADD THIS LINE */}
 			<div className="w-full max-w-md mx-auto">
                 <div className="flex flex-col items-center text-center mb-8">
                     <Image

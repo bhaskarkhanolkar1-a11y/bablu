@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 // ... (Icon components remain the same) ...
 
@@ -72,6 +73,30 @@ function LayoutDashboardIcon(props: React.SVGProps<SVGSVGElement>) {
 	);
 }
 
+// Barcode icon for the new button
+function BarcodeIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M3 5v14" />
+            <path d="M8 5v14" />
+            <path d="M12 5v14" />
+            <path d="M17 5v14" />
+            <path d="M21 5v14" />
+        </svg>
+    );
+}
+
 export default function HomePage() {
 	const router = useRouter();
 	const [code, setCode] = React.useState("");
@@ -83,6 +108,7 @@ export default function HomePage() {
 	const [activeIndex, setActiveIndex] = React.useState(-1);
 	const [isRecognizing, setIsRecognizing] = React.useState(false);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+	const [isScanning, setIsScanning] = React.useState(false);
 
 	function submit() {
 		if (!code.trim()) return;
@@ -177,8 +203,13 @@ export default function HomePage() {
         };
 	}
 
+	const handleScanSuccess = (decodedText: string) => {
+        setIsScanning(false);
+        router.push(`/item?code=${encodeURIComponent(decodedText)}`);
+    };
+
+
 	return (
-		// ... (JSX remains the same) ...
         <main className="min-h-screen flex items-center justify-center p-6">
 			<ThemeToggleButton />
 			<div className="w-full max-w-md mx-auto">
@@ -258,6 +289,16 @@ export default function HomePage() {
                         <Button onClick={submit} className="w-full h-11 text-base">
                             Search
                         </Button>
+
+						<Button
+                            variant="outline"
+                            onClick={() => setIsScanning(true)}
+                            className="h-11"
+                            aria-label="Scan barcode"
+                        >
+                            <BarcodeIcon className="h-5 w-5" />
+                        </Button>
+
                         <Button
                             variant="outline"
                             onClick={() => fileInputRef.current?.click()}
@@ -295,9 +336,21 @@ export default function HomePage() {
 						View Full Inventory Dashboard
 					</Button>
 				</div>
-
-                
 			</div>
+
+			{isScanning && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+                    <div className="bg-background rounded-lg p-6 shadow-lg w-full max-w-md relative">
+                        <h3 className="text-lg font-semibold mb-4 text-center">Scan Barcode</h3>
+                        <div className="rounded-lg overflow-hidden">
+							<BarcodeScanner onScanSuccess={handleScanSuccess} onScanFailure={()=>{}} />
+						</div>
+                        <Button variant="ghost" onClick={() => setIsScanning(false)} className="mt-4 w-full">
+                            Cancel
+                        </Button>
+                    </div>
+                </div>
+            )}
 		</main>
 	);
 }

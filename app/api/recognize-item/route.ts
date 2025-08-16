@@ -18,7 +18,11 @@ export async function POST(req: NextRequest) {
         // Performs text detection on the image file
         const [result] = await client.textDetection(Buffer.from(imageBytes, 'base64'));
         const detections = result.textAnnotations;
-        const recognizedText = detections.length > 0 ? detections[0].description : null;
+
+        // Check if detections is not null or undefined before accessing its properties
+        const recognizedText = detections && detections.length > 0 && detections[0].description
+            ? detections[0].description
+            : null;
 
 
 		return NextResponse.json({

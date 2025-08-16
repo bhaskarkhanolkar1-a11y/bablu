@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { ThemeToggleButton } from "@/components/ThemeToggleButton";
 
-// A simple camera icon component
+// ... (CameraIcon, PlusIcon, LayoutDashboardIcon components remain the same) ...
+
 function CameraIcon(props: React.SVGProps<SVGSVGElement>) {
 	return (
 		<svg
@@ -71,6 +72,7 @@ function LayoutDashboardIcon(props: React.SVGProps<SVGSVGElement>) {
 	);
 }
 
+
 export default function HomePage() {
 	const router = useRouter();
 	const [code, setCode] = React.useState("");
@@ -81,6 +83,9 @@ export default function HomePage() {
 	>([]);
 	const [activeIndex, setActiveIndex] = React.useState(-1);
 	const [isRecognizing, setIsRecognizing] = React.useState(false);
+
+    // Create a ref for the file input
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
 	function submit() {
 		if (!code.trim()) return;
@@ -148,23 +153,45 @@ export default function HomePage() {
 		}
 	}
 
-	async function handleImageRecognition() {
-		setIsRecognizing(true);
-		try {
-			const response = await fetch("/api/recognize-item", { method: "POST" });
-			const result = await response.json();
+	async function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file) return;
 
-			if (result.success && result.code) {
-				router.push(`/item?code=${encodeURIComponent(result.code)}`);
-			} else {
-				alert("Could not recognize the item. Please try again.");
-			}
-		} catch (error) {
-			console.error("Recognition API error:", error);
-			alert("An error occurred while trying to recognize the item.");
-		} finally {
-			setIsRecognizing(false);
-		}
+		setIsRecognizing(true);
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            const base64Image = reader.result?.toString().split(',')[1];
+            if (!base64Image) {
+                setIsRecognizing(false);
+                alert("Could not process the image. Please try again.");
+                return;
+            }
+
+            try {
+                const response = await fetch("/api/recognize-item", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: base64Image }),
+                });
+                const result = await response.json();
+
+                if (result.success && result.code) {
+                    router.push(`/item?code=${encodeURIComponent(result.code)}`);
+                } else {
+                    alert("Could not recognize the item. Please try again.");
+                }
+            } catch (error) {
+                console.error("Recognition API error:", error);
+                alert("An error occurred while trying to recognize the item.");
+            } finally {
+                setIsRecognizing(false);
+            }
+        };
+        reader.onerror = () => {
+            setIsRecognizing(false);
+            alert("Failed to read the image file.");
+        };
 	}
 
 	return (
@@ -249,7 +276,7 @@ export default function HomePage() {
                         </Button>
                         <Button
                             variant="outline"
-                            onClick={handleImageRecognition}
+                            onClick={() => fileInputRef.current?.click()}
                             className="h-11"
                             aria-label="Scan item with camera"
 							disabled={isRecognizing}
@@ -260,6 +287,13 @@ export default function HomePage() {
 								<CameraIcon className="h-5 w-5"/>
 							)}
                         </Button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageChange}
+                            className="hidden"
+                            accept="image/*"
+                        />
 						<Button
 							variant="outline"
 							onClick={() => router.push('/add-item')}

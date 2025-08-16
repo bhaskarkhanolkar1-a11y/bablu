@@ -140,17 +140,27 @@ export default function HomePage() {
             }
 
             try {
-                const response = await fetch("/api/recognize-item", {
+                const recogResponse = await fetch("/api/recognize-item", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ image: base64Image }),
                 });
-                const result = await response.json();
+                const recogResult = await recogResponse.json();
 
-                if (result.success && result.labels && result.labels.length > 0) {
-                    // Use the most confident label to search the inventory
-                    const searchTerm = result.labels[0];
-                    setCode(searchTerm); // This will trigger the search useEffect
+                if (recogResult.success && recogResult.labels && recogResult.labels.length > 0) {
+                    const searchTerm = recogResult.labels[0];
+                    
+                    // Now, search for this item in our inventory
+                    const searchResponse = await fetch(`/api/items?q=${encodeURIComponent(searchTerm)}&limit=1`);
+                    const searchResult = await searchResponse.json();
+
+                    if (searchResult && searchResult.length > 0) {
+                        // Item found, go to its page
+                        router.push(`/item?code=${encodeURIComponent(searchResult[0].code)}`);
+                    } else {
+                        // Item not found, go to the item page with a 'notFound' flag
+                        router.push(`/item?code=${encodeURIComponent(searchTerm)}&notFound=true`);
+                    }
                 } else {
                     alert("Could not recognize the item. Please try again.");
                 }
@@ -168,8 +178,8 @@ export default function HomePage() {
 	}
 
 	return (
-		// ... (JSX remains the same, but ensure the file input is present and linked) ...
-		<main className="min-h-screen flex items-center justify-center p-6">
+		// ... (JSX remains the same) ...
+        <main className="min-h-screen flex items-center justify-center p-6">
 			<ThemeToggleButton />
 			<div className="w-full max-w-md mx-auto">
                 <div className="flex flex-col items-center text-center mb-8">

@@ -17,18 +17,18 @@ export async function POST(req: NextRequest) {
         // Creates a client
         const client = new ImageAnnotatorClient();
 
-        // Performs text detection on the image file
-        const [result] = await client.textDetection(Buffer.from(imageBytes, 'base64'));
-        const detections = result.textAnnotations;
+        // Performs label detection on the image file
+        const [result] = await client.labelDetection(Buffer.from(imageBytes, 'base64'));
+        const labels = result.labelAnnotations;
 
-        // Check if detections is not null or undefined before accessing its properties
-        const recognizedText = detections && detections.length > 0 && detections[0].description
-            ? detections[0].description.trim().split('\n')[0] // Get the first line of text
+        // Check if labels were found and get the description of the most likely one
+        const recognizedObject = labels && labels.length > 0 && labels[0].description
+            ? labels[0].description
             : null;
 
 		return NextResponse.json({
 			success: true,
-			code: recognizedText,
+			code: recognizedObject, // We're now sending back the recognized object name
 		});
 	} catch (error: unknown) {
 		const message =

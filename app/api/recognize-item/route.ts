@@ -21,14 +21,12 @@ export async function POST(req: NextRequest) {
         const [result] = await client.labelDetection(Buffer.from(imageBytes, 'base64'));
         const labels = result.labelAnnotations;
 
-        // Check if labels were found and get the description of the most likely one
-        const recognizedObject = labels && labels.length > 0 && labels[0].description
-            ? labels[0].description
-            : null;
+        // Return all relevant labels
+        const recognizedLabels = labels ? labels.map(label => label.description) : [];
 
 		return NextResponse.json({
 			success: true,
-			code: recognizedObject, // We're now sending back the recognized object name
+			labels: recognizedLabels,
 		});
 	} catch (error: unknown) {
 		const message =

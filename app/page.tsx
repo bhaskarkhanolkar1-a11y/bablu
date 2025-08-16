@@ -278,14 +278,7 @@ export default function HomePage() {
 					</Button>
 				</div>
 
-                <div className="mt-12 text-center text-muted-foreground">
-                    <p className="text-sm">
-                        Powered by
-                    </p>
-                    <p className="text-xs mt-2">
-                        Bhaskar Khanolkar, Tapi Tajung, Ankush, Loanwang
-                    </p>
-                </div>
+                
 			</div>
 		</main>
 	);

@@ -6,12 +6,14 @@ import { ImageAnnotatorClient } from '@google-cloud/vision';
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-	// In a real app, you would receive the image file here.
-	// For now, we'll use a placeholder for the image data.
-	// You'll need to handle the image upload from the client-side.
-	const imageBytes = '...'; // This would be the base64 encoded image string
-
 	try {
+        const body = await req.json();
+        const imageBytes = body.image;
+
+        if (!imageBytes) {
+            return NextResponse.json({ success: false, error: "No image provided" }, { status: 400 });
+        }
+
         // Creates a client
         const client = new ImageAnnotatorClient();
 
@@ -21,13 +23,12 @@ export async function POST(req: NextRequest) {
 
         // Check if detections is not null or undefined before accessing its properties
         const recognizedText = detections && detections.length > 0 && detections[0].description
-            ? detections[0].description
+            ? detections[0].description.trim().split('\n')[0] // Get the first line of text
             : null;
-
 
 		return NextResponse.json({
 			success: true,
-			code: recognizedText, // Changed 'text' to 'code'
+			code: recognizedText,
 		});
 	} catch (error: unknown) {
 		const message =

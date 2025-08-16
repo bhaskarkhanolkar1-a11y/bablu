@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
 		return NextResponse.json({
 			success: true,
-			text: recognizedText,
+			code: recognizedText, // Changed 'text' to 'code'
 		});
 	} catch (error: unknown) {
 		const message =

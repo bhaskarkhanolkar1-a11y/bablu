@@ -19,7 +19,10 @@
 		"next-themes": "^0.3.0",
 		"qrcode.react": "^3.1.0",
 		"react": "19.1.0",
-		"react-dom": "19.1.0"
+		"react-dom": "19.1.0",
+		"nodemailer": "^6.9.14",
+"@slack/webhook": "^7.0.2",
+"discord-webhook-node": "^1.1.8"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",

@@ -1,6 +1,7 @@
 // FILE: lib/googleSheets.ts
 
 import { google } from "googleapis";
+import { handleLowStockNotification } from "./notifications";
 
 type SheetsClient = ReturnType<typeof google.sheets>;
 
@@ -138,9 +139,20 @@ export async function updateItem(
 		return false;
 	}
 
-	const sheetRowNumber = targetRowIndex + 1;
 	const existingRow = rows[targetRowIndex];
+	const oldQuantity = Number.parseInt(String(existingRow[1] ?? "0").trim(), 10) || 0;
 
+	// Trigger notifications if quantity is being updated and drops below the threshold
+	if (updateData.quantity !== undefined && updateData.quantity !== oldQuantity) {
+		// We don't need to wait for this to finish
+		handleLowStockNotification(
+			currentCode,
+			oldQuantity,
+			updateData.quantity
+		);
+	}
+
+	const sheetRowNumber = targetRowIndex + 1;
 	const code = updateData.newCode ?? existingRow[0];
 	const quantity = updateData.quantity ?? existingRow[1];
 	const location = updateData.location ?? existingRow[2];

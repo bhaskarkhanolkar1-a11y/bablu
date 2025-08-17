@@ -1,4 +1,4 @@
-// FILE: components/BarcodeScanner.tsx
+// FILE: components/ui/BarcodeScanner.tsx
 
 "use client";
 
@@ -40,10 +40,8 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
 			/* verbose= */ false
 		);
 
-		// The fix is changing 'error' to '_error' below
-		scanner.render(onScanSuccess, _error => {
-			// The library will log errors, we can ignore them here.
-		});
+		// The fix is removing the unused error callback below
+		scanner.render(onScanSuccess);
 
 		// Cleanup function to stop the scanner when the component unmounts
 		return () => {

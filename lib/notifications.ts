@@ -27,7 +27,11 @@ const discordWebhook = process.env.DISCORD_WEBHOOK_URL
 
 
 async function sendLowStockEmail(itemName: string, quantity: number) {
-	if (!process.env.EMAIL_TO || !transporter.options.auth) return;
+	// FIX: Check for the environment variables directly to ensure email is configured.
+	if (!process.env.EMAIL_TO || !process.env.EMAIL_SERVER_USER || !process.env.EMAIL_SERVER_PASSWORD) {
+        console.log("Email notifications are not configured. Skipping email.");
+        return;
+    }
 
 	try {
 		await transporter.sendMail({

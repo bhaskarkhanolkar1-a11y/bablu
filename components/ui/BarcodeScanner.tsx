@@ -40,8 +40,10 @@ export function BarcodeScanner({ onScanSuccess }: BarcodeScannerProps) {
 			/* verbose= */ false
 		);
 
-		// The fix is removing the unused error callback below
-		scanner.render(onScanSuccess);
+		// The fix is to provide an empty error callback as the second argument.
+		scanner.render(onScanSuccess, (error) => {
+			// The library will log errors to the console, we can ignore them here.
+		});
 
 		// Cleanup function to stop the scanner when the component unmounts
 		return () => {

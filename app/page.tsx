@@ -222,6 +222,14 @@ export default function HomePage() {
                         className="mb-6"
                         priority
                     />
+                    <p className="text-muted-foreground -mt-4 mb-4">A project by</p>
+                    <Image
+                        src="/Screenshot 2025-08-19 140422.png"
+                        alt="College Logo"
+                        width={80}
+                        height={80}
+                        className="mb-6"
+                    />
                     <h1 className="text-3xl font-bold tracking-tight">Inventory Lookup</h1>
                     <p className="text-muted-foreground mt-2">
                         Enter or scan a product code to check its quantity and location.
